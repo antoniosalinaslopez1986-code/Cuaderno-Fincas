@@ -1,0 +1,1462 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#b8185a">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Cuaderno de Finca (prueba)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: una columna tipo cuaderno de campo, navegación inferior fija, fichas en hoja deslizante */
+:root{
+  --bg:#f4f6f0; --surface:#ffffff; --sunk:#eaeee4; --ink:#1c2a1e; --muted:#5d6b5f; --line:#dbe1d3;
+  --accent:#b8185a; --accent-soft:#fbe3ee; --on-accent:#ffffff;
+  --leaf:#3b7a36; --leaf-soft:#e2efdc;
+  --ok:#2c7a31; --ok-soft:#e1f1e1; --warn:#a35f00; --warn-soft:#fdefd9; --bad:#b3261e;
+  --shadow:0 10px 30px rgba(28,42,30,.14);
+  --f-display:"Bricolage Grotesque",ui-rounded,system-ui,sans-serif;
+  --f-body:"Figtree",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111611; --surface:#1a211a; --sunk:#141a14; --ink:#e6ede2; --muted:#9aa89a; --line:#2b352b;
+  --accent:#ef6aa1; --accent-soft:#3a1a28; --on-accent:#1a0b12;
+  --leaf:#86c77a; --leaf-soft:#1f2f1d;
+  --ok:#7fcf83; --ok-soft:#18301a; --warn:#f0b35a; --warn-soft:#352812; --bad:#ff8a80;
+  --shadow:0 10px 30px rgba(0,0,0,.5); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111611; --surface:#1a211a; --sunk:#141a14; --ink:#e6ede2; --muted:#9aa89a; --line:#2b352b;
+  --accent:#ef6aa1; --accent-soft:#3a1a28; --on-accent:#1a0b12;
+  --leaf:#86c77a; --leaf-soft:#1f2f1d;
+  --ok:#7fcf83; --ok-soft:#18301a; --warn:#f0b35a; --warn-soft:#352812; --bad:#ff8a80;
+  --shadow:0 10px 30px rgba(0,0,0,.5); color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.45 var(--f-body);-webkit-font-smoothing:antialiased}
+.wrap{max-width:760px;margin:0 auto;padding-inline:16px;padding-block:0 110px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0}
+.num{font-variant-numeric:tabular-nums}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* Cabecera */
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:18px 14px}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.brand>div{min-width:0}
+[hidden]{display:none!important}
+.mark{width:42px;height:42px;border-radius:50%;flex:none;background:
+  radial-gradient(circle at 30% 35%,var(--ink) 0 1.2px,transparent 1.6px),
+  radial-gradient(circle at 62% 28%,var(--ink) 0 1.2px,transparent 1.6px),
+  radial-gradient(circle at 48% 58%,var(--ink) 0 1.2px,transparent 1.6px),
+  radial-gradient(circle at 72% 64%,var(--ink) 0 1.2px,transparent 1.6px),
+  radial-gradient(circle at 28% 70%,var(--ink) 0 1.2px,transparent 1.6px),
+  radial-gradient(circle at 55% 82%,var(--ink) 0 1.2px,transparent 1.6px),
+  radial-gradient(circle at 50% 50%,var(--accent-soft) 0 58%,var(--accent) 60%);}
+.brand h1{font-size:1.35rem;line-height:1.1;letter-spacing:-.01em}
+.brand p{margin:2px 0 0;color:var(--muted);font-size:.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stock{flex:none;text-align:right;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:6px 12px}
+.stock small{display:block;font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.stock b{font-family:var(--f-display);font-size:1.15rem}
+
+.banner{background:var(--warn-soft);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:14px;font-size:.9rem}
+
+/* Barras de herramientas */
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-block:4px 14px}
+.bar .grow{flex:1 1 auto}
+.btn{appearance:none;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:9px 16px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn.leaf{background:var(--leaf);border-color:var(--leaf);color:var(--surface)}
+.btn.danger{color:var(--bad)}
+.btn.danger.armed{background:var(--bad);border-color:var(--bad);color:var(--surface)}
+.btn.small{padding:6px 12px;font-size:.85rem}
+select.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:8px 12px;max-width:100%}
+.bar>select.chip{flex:1 1 140px;min-width:0}
+.bar .grow{display:none}
+.bar>.btn{flex:1 1 100%;justify-content:center}
+@media (min-width:640px){.bar>.btn{flex:0 0 auto}.bar .grow{display:block}.bar>select.chip{flex:0 1 auto}}
+
+/* Secciones */
+.sec{margin-block:22px}
+details.grp{margin-block:10px}
+details.grp>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--surface);border:1px solid var(--line);border-radius:14px;user-select:none}
+details.grp>summary::-webkit-details-marker{display:none}
+details.grp>summary::after{content:"";flex:none;width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);margin:-4px 4px 0 auto;transition:transform .15s}
+details.grp[open]>summary::after{transform:rotate(-135deg);margin-top:4px}
+details.grp[open]>summary{border-radius:14px 14px 0 0;border-bottom-color:transparent}
+details.grp>.gb{border:1px solid var(--line);border-top:0;border-radius:0 0 14px 14px;background:var(--bg);padding:10px}
+details.grp>.gb>.list,details.grp>.gb .tscroll>.table{border-radius:10px}
+details.grp.sec{margin-block:14px}
+details.grp.sec>summary h2{margin:0;flex:1;min-width:0}
+details.grp>summary .gt{flex:1;min-width:0;display:flex;flex-direction:column}
+details.grp>summary .gt strong{font-family:var(--f-display);font-size:1rem}
+details.grp>summary .gt span{font-size:.8rem;color:var(--muted)}
+details.grp>summary .gm{text-align:right;font-variant-numeric:tabular-nums;font-weight:700;display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+details.grp>summary .gm small{font-weight:500;color:var(--muted);font-size:.78rem}
+.dot{width:12px;height:12px;border-radius:4px;flex:none}
+.k-campo{background:var(--leaf)}.k-alm{background:var(--muted)}.k-art{background:var(--warn)}.k-cosecha{background:var(--leaf)}.k-venta{background:var(--accent)}.k-ok{background:var(--ok)}.k-warn{background:var(--warn)}.k-info{background:var(--accent)}.k-leaf{background:var(--leaf)}.k-mute{background:var(--line)}.k-late{background:var(--bad)}
+.tools{display:flex;gap:6px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+.seg{display:inline-flex;flex-wrap:wrap;background:var(--sunk);border-radius:18px;padding:3px;gap:2px}
+.seg button{border:0;background:none;border-radius:999px;padding:6px 12px;font-weight:600;font-size:.85rem;color:var(--muted);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.sec h2{font-size:1.05rem;margin-bottom:10px;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.sec h2 small{font-family:var(--f-body);font-weight:500;color:var(--muted);font-size:.8rem}
+.kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media (min-width:640px){.kpis{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.kpi small{display:block;color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.07em}
+.kpi b{display:block;font-family:var(--f-display);font-size:clamp(1.1rem,5vw,1.45rem);line-height:1.2;margin-top:4px}
+.kpi.hl{background:var(--accent-soft);border-color:transparent}
+button.kpi{text-align:left;cursor:pointer;font:inherit;color:inherit;position:relative;width:100%}
+button.kpi:hover{border-color:var(--muted)}
+.kpi .chev{position:absolute;top:7px;right:10px;color:var(--muted);font-size:1.15rem;line-height:1}
+[data-act^="go"]{cursor:pointer}
+tr[data-act]:hover td{background:var(--sunk)}
+td[data-act]{text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
+.m[data-act]:hover{background:var(--sunk);border-radius:4px}
+.legend span[data-act]{text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
+.stock[data-act]:hover{border-color:var(--muted)}
+.kpi.hl b{color:var(--accent)}
+
+.table{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.tscroll{overflow-x:auto}
+.table th,.table td{padding:9px 12px;text-align:right;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums;white-space:nowrap}
+.table th{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;background:var(--sunk)}
+.table th:first-child,.table td:first-child{text-align:left}
+.table tr:last-child td{border-bottom:0}
+.table td.strong{font-weight:700}
+
+/* Listas */
+.list{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:11px 14px;border-bottom:1px solid var(--line);cursor:pointer;background:none;border-left:0;border-right:0;border-top:0;text-align:left;width:100%}
+.row:last-child{border-bottom:0}
+.row:hover{background:var(--sunk)}
+.date{width:44px;text-align:center;line-height:1.05}
+.date b{display:block;font-family:var(--f-display);font-size:1.2rem}
+.date small{font-size:.68rem;text-transform:uppercase;color:var(--muted);letter-spacing:.05em}
+.row .main{min-width:0}
+.row .main strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .main span{display:block;color:var(--muted);font-size:.84rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .fig{text-align:right;font-variant-numeric:tabular-nums}
+.row .fig b{display:block;font-weight:700}
+.pill{display:inline-block;font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:999px;letter-spacing:.02em}
+.pill.ok{background:var(--ok-soft);color:var(--ok)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.pill.info{background:var(--accent-soft);color:var(--accent)}
+.pill.leaf{background:var(--leaf-soft);color:var(--leaf)}
+.pill.mute{background:var(--sunk);color:var(--muted)}
+.pill.late{background:var(--bad);color:var(--surface)}
+.pills{display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end;margin-top:3px}
+.who{display:inline-flex;align-items:center;gap:6px}
+.who i{width:8px;height:8px;border-radius:50%;display:inline-block;flex:none}
+.hist{list-style:none;margin:0;padding:0;font-size:.84rem;color:var(--muted);display:flex;flex-direction:column;gap:4px}
+.qty{width:100%;min-width:0;max-width:110px;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 8px;text-align:right;font-variant-numeric:tabular-nums}
+.reg{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:var(--leaf-soft);border-radius:14px;padding:12px 14px;margin-bottom:14px}
+.reg p{margin:0;flex:1 1 220px;font-size:.9rem}
+.reg input{flex:1 1 140px;min-width:0;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:9px 12px}
+.team-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line)}
+.team-row:last-child{border-bottom:0}
+.mvt{display:inline-block;width:22px;height:22px;border-radius:50%;text-align:center;line-height:22px;font-weight:700;font-size:.85rem;flex:none}
+.mvt.entrada{background:var(--ok-soft);color:var(--ok)}.mvt.uso{background:var(--warn-soft);color:var(--warn)}.mvt.traslado{background:var(--sunk);color:var(--muted)}
+.lowbar{background:var(--warn-soft);border:1px solid var(--line);border-radius:12px;padding:9px 12px;font-size:.9rem;margin-bottom:10px}
+.triple{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.triple .btn{justify-content:center;padding-inline:8px}
+.perms{display:flex;flex-direction:column;gap:10px}
+.perms fieldset{border:1px solid var(--line);border-radius:12px;padding:6px 12px 10px;margin:0;display:flex;flex-direction:column;gap:9px;background:var(--surface);min-width:0}
+.perms legend{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700;padding:0 6px}
+.perms .check{font-weight:500!important}
+.perms input:disabled+span{opacity:.6}
+.row:disabled{cursor:default;color:inherit;opacity:1}
+.row:disabled:hover{background:none}
+.noprice [name=l-pr],.noprice #v-tot{display:none}
+.gear{flex:none;width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--muted);cursor:pointer;display:grid;place-items:center;padding:0}
+.gear svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.gear[aria-current="page"]{color:var(--accent);background:var(--accent-soft);border-color:transparent}
+.calhead{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.calhead h2{flex:1;font-size:1.2rem;text-align:center}
+.calhead .x{background:var(--surface);border:1px solid var(--line)}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:8px}
+.cal .dow{font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-align:center;padding:2px 0 4px;font-weight:600}
+.cal button{aspect-ratio:1/1;min-height:44px;border:1px solid transparent;background:none;border-radius:10px;cursor:pointer;padding:3px 0 0;display:flex;flex-direction:column;align-items:center;gap:3px;font:inherit;color:inherit;font-variant-numeric:tabular-nums}
+.cal button:hover{background:var(--sunk)}
+.cal button.hoy{border-color:var(--accent);font-weight:700;color:var(--accent)}
+.cal button.sel{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.cal button.sel .dots i{box-shadow:0 0 0 1px var(--on-accent)}
+.cal .dots{display:flex;gap:2px;flex-wrap:wrap;justify-content:center;max-width:100%;min-height:7px}
+.cal .dots i{width:7px;height:7px;border-radius:50%;display:block}
+.cal .dots i.ped{border-radius:2px;background:var(--accent)}
+.cal .more{font-size:.6rem;line-height:1;opacity:.8}
+.ndot{width:12px;height:12px;border-radius:50%;flex:none}
+.dayhead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:16px 0 8px}
+.dayhead h2{font-size:1.05rem}
+.row.done .main strong{text-decoration:line-through;opacity:.6}
+.notetxt{white-space:pre-wrap;overflow-wrap:anywhere;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-top:12px}
+.callegend{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:.76rem;color:var(--muted);margin-top:8px}
+.callegend span{display:inline-flex;align-items:center;gap:5px}
+.callegend i{width:8px;height:8px;border-radius:50%;display:inline-block}
+.mebtn{flex:none;width:38px;height:38px;border-radius:50%;border:2px solid var(--surface);box-shadow:0 0 0 1px var(--line);color:#fff;font-weight:700;font-size:1rem;cursor:pointer;display:grid;place-items:center}
+.top .right{display:flex;align-items:center;gap:6px;flex:none}
+@media (max-width:479px){.stock{padding:5px 9px}.stock b{font-size:1rem}.brand{gap:9px}.mark{width:36px;height:36px}.brand h1{font-size:1.2rem}}
+.login{max-width:400px;margin:28px auto 0;display:flex;flex-direction:column;gap:14px}
+.login h2{font-size:1.4rem}
+.login .card{display:flex;flex-direction:column;gap:12px}
+.err{color:var(--bad);font-size:.88rem;font-weight:600;margin:0}
+.avatar{width:30px;height:30px;border-radius:50%;color:#fff;font-weight:700;font-size:.8rem;display:grid;place-items:center;flex:none}
+.pl{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:11px 14px;border-bottom:1px solid var(--line)}
+.pl:last-child{border-bottom:0}
+.pl .main strong{display:block}.pl .main span{display:block;font-size:.84rem;color:var(--muted)}
+.plq{display:flex;flex-direction:column;align-items:flex-end;gap:3px;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600}
+.plq .qty{width:96px}.plq b{font-size:.95rem;color:var(--ink);text-transform:none;letter-spacing:0}
+.empty{background:var(--surface);border:1px dashed var(--line);border-radius:14px;padding:22px 18px;text-align:center;color:var(--muted)}
+.empty strong{display:block;color:var(--ink);font-family:var(--f-display);font-size:1.05rem;margin-bottom:4px}
+.empty .btn{margin-top:12px}
+
+/* Gráfico mensual */
+.chart{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 12px 8px}
+.bars{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:4px;height:140px;align-items:end;border-bottom:1px solid var(--line)}
+.m{display:flex;gap:2px;align-items:end;height:100%;justify-content:center}
+.m i{display:block;width:40%;max-width:12px;border-radius:3px 3px 0 0;min-height:1px}
+.m i.c{background:var(--leaf)} .m i.v{background:var(--accent)}
+.mlab{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:4px;font-size:.7rem;color:var(--muted);text-align:center;padding-top:4px}
+.legend{display:flex;gap:14px;font-size:.78rem;color:var(--muted);margin-top:6px}
+.legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px;background:var(--leaf)}
+.legend span.v::before{background:var(--accent)}
+.meter{height:6px;background:var(--sunk);border-radius:6px;overflow:hidden;margin-top:6px}
+.meter i{display:block;height:100%;background:var(--leaf)}
+
+/* Navegación */
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:5;background:var(--surface);border-top:1px solid var(--line);padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px))}
+nav.tabs .in{max-width:760px;margin:0 auto;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(58px,1fr);gap:2px;overflow-x:auto;scrollbar-width:none}
+nav.tabs .in::-webkit-scrollbar{display:none}
+nav.tabs .in.many{display:flex;gap:0;justify-content:space-between}
+nav.tabs .in.many button{flex:1 1 auto;min-width:0;padding:6px 1px;font-size:.62rem;letter-spacing:-.01em}
+nav.tabs .in.many button svg{width:21px;height:21px}
+nav.tabs .in.many{overflow:hidden}
+nav.tabs .in.many .badge{left:auto;right:0;top:0;min-width:15px;height:15px;line-height:15px;font-size:.6rem;padding:0 3px}
+@media (min-width:480px){nav.tabs .in.many button{font-size:.72rem;letter-spacing:0;padding:6px 4px}}
+nav.tabs button{background:none;border:0;padding:6px 2px;border-radius:10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:.72rem;font-weight:600;color:var(--muted)}
+nav.tabs button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+nav.tabs button[aria-current="page"]{color:var(--accent);background:var(--accent-soft)}
+nav.tabs button{position:relative;white-space:nowrap}
+nav.tabs .badge{position:absolute;top:1px;left:calc(50% + 5px);min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:var(--accent);color:var(--on-accent);font-size:.66rem;font-weight:700;line-height:17px;text-align:center;border:2px solid var(--surface);box-sizing:content-box}
+nav.tabs .badge.soft{background:var(--muted)}
+.row.unread{background:var(--accent-soft)}
+.row.av .main strong{white-space:normal;font-weight:600;font-size:.92rem}
+.row.unread .main strong::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--accent);margin-right:6px;vertical-align:1px}
+.cnt{display:inline-block;min-width:20px;padding:1px 6px;border-radius:10px;background:var(--accent);color:var(--on-accent);font-size:.72rem;font-weight:700;text-align:center}
+.msgs{display:flex;flex-direction:column;gap:6px;max-height:52vh;overflow-y:auto;padding:4px 2px 8px}
+.bub{max-width:82%;padding:8px 12px;border-radius:16px;overflow-wrap:anywhere;white-space:pre-wrap;font-size:.95rem}
+.bub small{display:block;font-size:.7rem;opacity:.75;margin-top:3px;white-space:normal}
+.bub.mine{align-self:flex-end;background:var(--accent);color:var(--on-accent);border-bottom-right-radius:4px}
+.bub.theirs{align-self:flex-start;background:var(--surface);border:1px solid var(--line);border-bottom-left-radius:4px}
+.bub.sys{align-self:center;background:var(--sunk);color:var(--muted);font-size:.8rem;border-radius:10px}
+.daysep{align-self:center;font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:6px}
+.compose{display:flex;gap:8px;align-items:flex-end;border-top:1px solid var(--line);padding-top:10px}
+.compose textarea{flex:1;min-width:0;min-height:44px;max-height:140px;resize:none;border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:10px 12px;font-size:1rem}
+.compose .btn{flex:none}
+
+/* Hoja (formularios) */
+.scrim{position:fixed;inset:0;z-index:10;background:rgba(10,16,10,.45);display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--bg);width:100%;max-width:560px;max-height:92%;overflow:auto;border-radius:20px 20px 0 0;box-shadow:var(--shadow);padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px))}
+@media (min-width:700px){.scrim{align-items:center}.sheet{border-radius:20px}}
+.sheet header{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px}
+.sheet header h2{font-size:1.25rem}
+.x{border:0;background:var(--sunk);width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:1.2rem;line-height:1}
+.f{display:flex;flex-direction:column;gap:12px}
+.f label{display:flex;flex-direction:column;gap:4px;font-size:.8rem;font-weight:600;color:var(--muted)}
+.f input,.f select,.f textarea{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:10px 12px;font-size:1rem;font-weight:400;color:var(--ink);width:100%;min-width:0}
+.f textarea{min-height:64px;resize:vertical}
+.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.check{flex-direction:row!important;align-items:center;gap:10px!important;font-size:.95rem!important;color:var(--ink)!important}
+.check input{width:20px;height:20px;flex:none}
+.lines{display:flex;flex-direction:column;gap:8px}
+.line{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 34px;grid-template-areas:"p p x" "c c c" "k e e";gap:6px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px}
+.line [name=l-prod]{grid-area:p}.line [name=l-cal]{grid-area:c}.line [name=l-kg]{grid-area:k}.line [name=l-pr]{grid-area:e}.line .x{grid-area:x}
+@media (min-width:520px){.line{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) minmax(0,.8fr) minmax(0,.8fr) 34px;grid-template-areas:"p c k e x"}}
+.line input,.line select{padding:9px 8px!important}
+.line .x{background:var(--sunk)}
+.total{display:flex;justify-content:space-between;align-items:baseline;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+.total b{font-family:var(--f-display);font-size:1.3rem}
+.acts{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;margin-top:6px}
+.acts .r{display:flex;gap:8px;flex-wrap:wrap}
+.kv{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 14px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:.92rem}
+.kv dt{color:var(--muted)} .kv dd{margin:0;text-align:right;overflow-wrap:anywhere}
+.hint{font-size:.82rem;color:var(--muted);margin:0}
+.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:20;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:600;font-size:.9rem;max-width:calc(100% - 32px);box-shadow:var(--shadow)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px}
+@media (prefers-reduced-motion:no-preference){.sheet{animation:up .22s ease-out}@keyframes up{from{transform:translateY(24px);opacity:.6}}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><span class="mark" aria-hidden="true"></span><div><h1>Cuaderno de Finca</h1><p id="sub">Producción y ventas</p></div></div>
+    <div class="right"><div class="stock" id="stockBox" data-act="go-stock" role="link" tabindex="0" hidden><small>En almacén</small><b class="num" id="stockTop">0 kg</b></div><button class="gear" id="gearBtn" data-act="tab:ajustes" aria-label="Ajustes" title="Ajustes" hidden><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg></button><button class="mebtn" id="meBtn" data-act="perfil" aria-label="Mi perfil" hidden></button></div>
+  </header>
+  <div id="banner" class="banner" hidden></div>
+  <main id="main"></main>
+</div>
+
+<nav class="tabs" aria-label="Secciones"><div class="in" id="navIn"></div></nav>
+
+<div id="sheetRoot"></div>
+<div id="toast" class="toast" role="status" hidden></div>
+
+<script>
+(()=>{
+const DEF_CAL=['Extra','Primera','Segunda','Destrío'];
+const MES=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+const S={productos:[],parcelas:[],empresas:[],cosechas:[],ventas:[],pedidos:[],usuarios:[],mensajes:[],insumos:[],movimientos:[],notas:[],cfg:{}};
+let openChat=null; const vistos=new Set(); let avisosListos=false;
+let me={id:null}; const SESS='cf-sesion'; let fallos=0, bloqueoHasta=0, loginErr='';
+const DEF_PROD={id:'pitahaya',nombre:'Pitahaya',calidades:DEF_CAL};
+const loaded={};
+let db=null, status='conectando', tab='resumen';
+const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+const F={yr:String(new Date().getFullYear()), producto:'', parcela:'', estado:'', empresa:'', ped:'', gc:'mes', gv:'mes', gi:'campo', gm:'mes', calMes:today().slice(0,7), calDia:today()};
+const armed={};
+const OPEN={};const op=k=>OPEN[k]?'open':'';
+function grp(k,kind,title,sub,meta,metaSub,body,d){return `<details class="grp" data-k="${k}" ${op(k,d)}><summary><span class="dot k-${kind}"></span><span class="gt"><strong>${title}</strong>${sub?`<span>${sub}</span>`:''}</span><span class="gm">${meta}${metaSub?`<small>${metaSub}</small>`:''}</span></summary><div class="gb"><div class="list">${body}</div></div></details>`}
+const segBtns=(name,cur,opts)=>`<div class="tools"><span class="hint">Agrupar por</span><div class="seg" role="group">${opts.map(([v,l])=>`<button type="button" data-act="grp:${name}:${v}" aria-pressed="${cur===v}">${l}</button>`).join('')}</div></div>`;
+const isoD=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const lunes=f=>{const d=new Date(f+'T12:00');if(isNaN(d))return '';d.setDate(d.getDate()-(d.getDay()+6)%7);return isoD(d)};
+const esPeriodo=m=>m==='mes'||m==='semana'||m==='dia';
+const PERIODOS=[['mes','Mes'],['semana','Semana'],['dia','Día']];
+const periodoKey=(f,m)=>!f?'':m==='dia'?f:m==='semana'?lunes(f):f.slice(0,7);
+function periodoTitulo(k,m){
+  if(!k)return 'Sin fecha';
+  if(m==='dia'){const d=new Date(k+'T12:00'),t=d.toLocaleDateString('es-ES',{weekday:'long'});return t.charAt(0).toUpperCase()+t.slice(1)+' '+d.getDate()+' '+MES[d.getMonth()]+' '+d.getFullYear()}
+  if(m==='semana'){const a=new Date(k+'T12:00'),b=new Date(a);b.setDate(b.getDate()+6);const f=(d,y)=>d.getDate()+' '+MES[d.getMonth()]+(y?' '+d.getFullYear():'');return `Semana del ${f(a,a.getFullYear()!==b.getFullYear())} al ${f(b,true)}`}
+  return mesLargo(k+'-01');
+}
+const mesLargo=f=>{const [y,m]=(f||'').split('-');const n=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'][+m-1];return n?n+' '+y:'Sin fecha'};
+function groupBy(arr,keyFn){const m=new Map();arr.forEach(x=>{const k=keyFn(x);if(!m.has(k))m.set(k,[]);m.get(k).push(x)});return [...m.entries()]}
+
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const nf=new Intl.NumberFormat('es-ES',{maximumFractionDigits:1});
+const eurF=new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR'});
+const kg=n=>nf.format(n||0)+' kg', eur=n=>eurF.format(n||0);
+const num=v=>{v=String(v??'').trim();if(!v)return 0;if(v.includes(','))v=v.replace(/\./g,'').replace(',','.');const n=parseFloat(v);return isFinite(n)?n:0};
+const show=n=>n?String(n).replace('.',','):'';
+const byId=(arr,id)=>arr.find(x=>x.id===id);
+const pidOf=x=>x.productoId||'pitahaya';
+function prods(){
+  const l=S.productos.slice().sort((a,b)=>(a.nombre||'').localeCompare(b.nombre||''));
+  const usado=S.cosechas.some(x=>pidOf(x)==='pitahaya')||S.ventas.some(v=>(v.lineas||[]).some(x=>pidOf(x)==='pitahaya'));
+  if(!byId(l,'pitahaya')&&(!l.length||usado))l.unshift(DEF_PROD);
+  return l;
+}
+const prod=id=>byId(prods(),id);
+const prodName=id=>prod(id)?.nombre||'Producto borrado';
+const cal=pid=>{const p=prod(pid||prods()[0]?.id);return p&&Array.isArray(p.calidades)&&p.calidades.length?p.calidades:DEF_CAL};
+const empName=id=>byId(S.empresas,id)?.nombre||'Empresa borrada';
+const parName=id=>id?(byId(S.parcelas,id)?.nombre||'Parcela borrada'):'Sin parcela';
+const lin=(v,pid=F.producto)=>(v.lineas||[]).filter(l=>!pid||pidOf(l)===pid);
+const vKg=(v,pid)=>lin(v,pid).reduce((a,l)=>a+(+l.kg||0),0);
+const vTot=(v,pid)=>lin(v,pid).reduce((a,l)=>a+(+l.kg||0)*(+l.precio||0),0);
+const okProd=x=>!F.producto||pidOf(x)===F.producto;
+const hasProd=v=>!F.producto||lin(v).length>0;
+const inYr=f=>F.yr==='todo'||String(f||'').startsWith(F.yr);
+const sortDesc=a=>a.slice().sort((x,y)=>(y.fecha||'').localeCompare(x.fecha||'')||(y.creado||0)-(x.creado||0));
+const fdate=f=>{if(!f)return '';const [y,m,d]=f.split('-');return `${+d} ${MES[+m-1]} ${y}`};
+const dateBox=f=>{const [y,m,d]=(f||'--').split('-');return `<div class="date"><b>${+d||''}</b><small>${MES[+m-1]||''}</small></div>`};
+
+function toast(msg){const t=$('#toast');t.textContent=msg;t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>t.hidden=true,3200)}
+function errMsg(e){
+  if(e&&e.code==='invalid_argument')return 'No tienes permiso para guardar. Pide al dueño de la app que te comparta como Editor.';
+  if(e&&e.code==='quota_exceeded')return 'La base de datos está llena. Borra registros antiguos.';
+  return 'No se pudo guardar. Revisa la conexión e inténtalo de nuevo.';
+}
+async function put(col,id,data){
+  if(!db){toast('Abre la app con tu cuenta de Claude para guardar datos.');return false}
+  try{const ref=id?db.collection(col).doc(id):db.collection(col).doc();await ref.set(data);return ref.id||true}
+  catch(e){toast(errMsg(e));return false}
+}
+async function del(col,id){
+  if(!db)return false;
+  try{await db.collection(col).doc(id).delete();return true}catch(e){toast(errMsg(e));return false}
+}
+
+/* ---------- Cálculos ---------- */
+function stockPorCalidad(pid=F.producto){
+  const m={}, key=(p,c)=>p+'|'+c, get=(p,c)=>m[key(p,c)]??={p,c,co:0,v:0};
+  prods().filter(p=>!pid||p.id===pid).forEach(p=>cal(p.id).forEach(c=>get(p.id,c)));
+  S.cosechas.forEach(x=>{if(!pid||pidOf(x)===pid)get(pidOf(x),x.calidad).co+=+x.kg||0});
+  S.ventas.forEach(v=>lin(v,pid).forEach(l=>{get(pidOf(l),l.calidad).v+=+l.kg||0}));
+  return Object.values(m);
+}
+function stockTotal(){return stockPorCalidad('').reduce((a,x)=>a+x.co-x.v,0)}
+function years(){const s=new Set([String(new Date().getFullYear())]);[...S.cosechas,...S.ventas].forEach(x=>x.fecha&&s.add(x.fecha.slice(0,4)));return [...s].sort().reverse()}
+function lastPrice(empId,pid,calidad){for(const v of sortDesc(S.ventas)){if(empId&&v.empresaId!==empId)continue;const l=(v.lineas||[]).find(l=>pidOf(l)===pid&&l.calidad===calidad&&+l.precio);if(l)return l.precio}return ''}
+function nextNum(fecha){const y=(fecha||today()).slice(0,4);let m=0;S.ventas.forEach(v=>{const r=/^A(\d{4})-(\d+)$/.exec(v.num||'');if(r&&r[1]===y)m=Math.max(m,+r[2])});return `A${y}-${String(m+1).padStart(4,'0')}`}
+
+/* ---------- Vistas ---------- */
+const yrSelect=()=>`<select class="chip" id="f-yr" aria-label="Campaña">${years().map(y=>`<option value="${y}" ${F.yr===y?'selected':''}>Campaña ${y}</option>`).join('')}<option value="todo" ${F.yr==='todo'?'selected':''}>Todos los años</option></select>`;
+const prodSelect=()=>prods().length>1?`<select class="chip" id="f-prod" aria-label="Producto"><option value="">Todos los productos</option>${prods().map(p=>`<option value="${p.id}" ${F.producto===p.id?'selected':''}>${esc(p.nombre)}</option>`).join('')}</select>`:'';
+const emptyBox=(t,d,act,label)=>`<div class="empty"><strong>${t}</strong>${d}${act&&(!NEED[act]||can(NEED[act]))?`<div><button class="btn primary" data-act="${act}">${label}</button></div>`:''}</div>`;
+
+const go=(t,params)=>tabs().includes(t)?` data-act="go:${t}:${esc(params||'')}" role="link" tabindex="0"`:'';
+function vResumen(){
+  const cs=S.cosechas.filter(x=>inYr(x.fecha)&&okProd(x)), vs=S.ventas.filter(x=>inYr(x.fecha)&&hasProd(x));
+  const kc=cs.reduce((a,x)=>a+(+x.kg||0),0), kv=vs.reduce((a,v)=>a+vKg(v),0);
+  const fact=vs.reduce((a,v)=>a+vTot(v),0), pend=vs.filter(v=>!v.cobrado).reduce((a,v)=>a+vTot(v),0);
+  const st=stockPorCalidad();
+  const K=(lab,val,cls,g)=>g?`<button class="kpi ${cls}"${g}><small>${lab}</small><b class="num">${val}</b><span class="chev" aria-hidden="true">›</span></button>`:`<div class="kpi ${cls}"><small>${lab}</small><b class="num">${val}</b></div>`;
+  const ym=i=>F.yr+'-'+String(i+1).padStart(2,'0');
+  let h=`<div class="bar">${yrSelect()}${prodSelect()}<span class="grow"></span>${can('cos_editar')?'<button class="btn leaf small" data-act="add-cosecha">+ Cosecha</button>':''}${can('ventas_editar')?'<button class="btn primary small" data-act="add-venta">+ Venta</button>':''}</div>
+  <div class="kpis">
+    ${K('Cosechado',kg(kc),'',go('cosechas','gc=mes;open=*first'))}
+    ${K('Vendido',kg(kv),'',go('ventas','gv=mes;open=*first'))}
+    ${K('Facturado',eur(fact),'',go('ventas','gv=empresa'))}
+    ${K('Pendiente de cobro',eur(pend),'hl',go('ventas','estado=pendiente;gv=empresa;open=*all'))}
+  </div>`;
+  if(!S.cosechas.length&&!S.ventas.length){
+    return h+`<div class="sec">${emptyBox('Aún no hay datos','Anota la primera cosecha en kg y después registra las ventas a cada empresa. El stock se calcula solo.','add-cosecha','Anotar primera cosecha')}</div>`;
+  }
+  h+=stockTable(st);
+  if(F.yr!=='todo'){
+    const mc=Array(12).fill(0), mv=Array(12).fill(0);
+    cs.forEach(x=>mc[+x.fecha.slice(5,7)-1]+=+x.kg||0);
+    vs.forEach(v=>mv[+v.fecha.slice(5,7)-1]+=vKg(v));
+    const max=Math.max(1,...mc,...mv);
+    h+=`<details class="grp sec" data-k="s-kilos-por-mes" ${op('s-kilos-por-mes',true)}><summary><h2>Kilos por mes <small>${F.yr}</small></h2></summary><div class="gb"><div class="chart"><div class="bars">${mc.map((c,i)=>`<div class="m" title="${MES[i]}: ${kg(c)} cosechados, ${kg(mv[i])} vendidos"${c?go('cosechas','gc=mes;open=c-mes-'+ym(i)):mv[i]?go('ventas','gv=mes;open=v-mes-'+ym(i)):''}><i class="c" style="height:${c/max*100}%"></i><i class="v" style="height:${mv[i]/max*100}%"${mv[i]?go('ventas','gv=mes;open=v-mes-'+ym(i)):''}></i></div>`).join('')}</div><div class="mlab">${MES.map((m,i)=>`<span${mc[i]?go('cosechas','gc=mes;open=c-mes-'+ym(i)):''}>${m[0].toUpperCase()}</span>`).join('')}</div><div class="legend"><span${go('cosechas','gc=mes;open=*first')}>Cosechado</span><span class="v"${go('ventas','gv=mes;open=*first')}>Vendido</span></div><p class="hint" style="margin:6px 0 0">Toca un mes para ver sus cosechas; la barra fucsia abre sus ventas.</p></div></div></details>`;
+  }
+  if(!F.producto&&prods().length>1){
+    const pp=prods().map(p=>({p,co:cs.filter(x=>pidOf(x)===p.id).reduce((a,x)=>a+(+x.kg||0),0),v:vs.reduce((a,v)=>a+vKg(v,p.id),0),e:vs.reduce((a,v)=>a+vTot(v,p.id),0)})).filter(x=>x.co||x.v);
+    if(pp.length)h+=`<details class="grp sec" data-k="s-por-producto" ${op('s-por-producto',false)}><summary><h2>Por producto</h2></summary><div class="gb"><div class="tscroll"><table class="table"><thead><tr><th>Producto</th><th>Cosechado</th><th>Vendido</th><th>€/kg medio</th><th>Importe</th></tr></thead><tbody>${pp.map(x=>{const gv=go('ventas','producto='+x.p.id+';gv=mes;open=*first');return `<tr${go('cosechas','producto='+x.p.id+';gc=mes;open=*first')}><td>${esc(x.p.nombre)}</td><td>${kg(x.co)}</td><td${gv}>${kg(x.v)}</td><td${gv}>${x.v?eur(x.e/x.v):'—'}</td><td class="strong"${gv}>${eur(x.e)}</td></tr>`}).join('')}</tbody></table></div></div></details>`;
+  }
+  const porEmp={};vs.forEach(v=>{const e=porEmp[v.empresaId]??={kg:0,eur:0,pend:0};e.kg+=vKg(v);e.eur+=vTot(v);if(!v.cobrado)e.pend+=vTot(v)});
+  const emps=Object.entries(porEmp).sort((a,b)=>b[1].eur-a[1].eur);
+  if(emps.length)h+=`<details class="grp sec" data-k="s-ventas-por-empresa" ${op('s-ventas-por-empresa',false)}><summary><h2>Ventas por empresa</h2></summary><div class="gb"><div class="tscroll"><table class="table"><thead><tr><th>Empresa</th><th>Kg</th><th>€/kg medio</th><th>Importe</th><th>Pendiente</th></tr></thead><tbody>${
+    emps.map(([id,e])=>`<tr${go('ventas','empresa='+id+';gv=mes;open=*all')}><td>${esc(empName(id))}</td><td>${kg(e.kg)}</td><td>${e.kg?eur(e.eur/e.kg):'—'}</td><td class="strong">${eur(e.eur)}</td><td${e.pend?go('ventas','empresa='+id+';estado=pendiente;gv=mes;open=*all'):''}>${e.pend?`<span class="pill warn">${eur(e.pend)}</span>`:'<span class="pill ok">Al día</span>'}</td></tr>`).join('')
+  }</tbody></table></div></div></details>`;
+  const porPar={};cs.forEach(x=>porPar[x.parcelaId||'']=(porPar[x.parcelaId||'']||0)+(+x.kg||0));
+  const pars=Object.entries(porPar).sort((a,b)=>b[1]-a[1]);const pmax=Math.max(1,...pars.map(p=>p[1]));
+  if(pars.length)h+=`<details class="grp sec" data-k="s-cosecha-por-parcela" ${op('s-cosecha-por-parcela',false)}><summary><h2>Cosecha por parcela</h2></summary><div class="gb"><div class="list">${pars.map(([id,k])=>`<div class="row" style="grid-template-columns:minmax(0,1fr) auto"${id?go('cosechas','parcela='+id+';gc=mes;open=*first'):go('cosechas','gc=parcela;open=c-parcela-')}><div class="main"><strong>${esc(parName(id))}</strong><div class="meter"><i style="width:${k/pmax*100}%"></i></div></div><div class="fig"><b>${kg(k)}</b></div></div>`).join('')}</div></div></details>`;
+  return h;
+}
+
+function vCosechas(){
+  let cs=sortDesc(S.cosechas.filter(x=>inYr(x.fecha)&&okProd(x)&&(!F.parcela||(x.parcelaId||'')===F.parcela)));
+  const tot=cs.reduce((a,x)=>a+(+x.kg||0),0);
+  let h=`<div class="bar">${yrSelect()}${prodSelect()}<select class="chip" id="f-parcela" aria-label="Parcela"><option value="">Todas las parcelas</option>${S.parcelas.map(p=>`<option value="${p.id}" ${F.parcela===p.id?'selected':''}>${esc(p.nombre)}</option>`).join('')}</select><span class="grow"></span>${can('cos_editar')?'<button class="btn leaf" data-act="add-cosecha">+ Anotar cosecha</button>':''}</div>`;
+  if(!cs.length)return h+emptyBox('Sin cosechas en este periodo','Cada vez que recojan, anota fecha, parcela, calidad y kilos.','add-cosecha','Anotar cosecha');
+  const edC=can('cos_editar');const rowC=x=>`<button class="row" ${edC?`data-act="edit-cosecha:${x.id}"`:'disabled'}>${dateBox(x.fecha)}<div class="main"><strong>${esc(F.gc==='parcela'?prodName(pidOf(x)):parName(x.parcelaId))}</strong><span>${F.gc==='parcela'?'':prods().length>1&&F.gc!=='producto'?esc(prodName(pidOf(x)))+' · ':''}${esc(x.calidad||'')}${x.nota?' · '+esc(x.nota):''}</span></div><div class="fig"><b>${kg(x.kg)}</b></div></button>`;
+  const key=F.gc==='parcela'?(x=>x.parcelaId||''):F.gc==='producto'?(x=>pidOf(x)+'|'+x.calidad):(x=>periodoKey(x.fecha,F.gc));
+  let gs=groupBy(cs,key);if(!esPeriodo(F.gc))gs.sort((a,b)=>b[1].reduce((s,x)=>s+(+x.kg||0),0)-a[1].reduce((s,x)=>s+(+x.kg||0),0));
+  h+=segBtns('gc',F.gc,[...PERIODOS,['parcela','Parcela'],['producto','Producto']])+`<p class="hint" style="margin-bottom:8px">${cs.length} registros · <b class="num">${kg(tot)}</b></p>`;
+  h+=gs.map(([k,xs],i)=>{const t=xs.reduce((a,x)=>a+(+x.kg||0),0);const title=F.gc==='parcela'?esc(parName(k)):F.gc==='producto'?esc(prodName(k.split('|')[0]))+' · '+esc(k.split('|')[1]):periodoTitulo(k,F.gc);const dias=new Set(xs.map(x=>x.fecha)).size;
+    return grp(`c-${F.gc}-${k}`,'cosecha',title,F.gc==='dia'?`${xs.length} ${xs.length===1?'registro':'registros'}`:`${xs.length} registros · ${dias} ${dias===1?'día':'días'} de recogida`,kg(t),'',xs.map(rowC).join(''),i===0)}).join('');
+  return h;
+}
+
+function vVentas(){
+  let vs=sortDesc(S.ventas.filter(v=>inYr(v.fecha)&&hasProd(v)&&(!F.empresa||v.empresaId===F.empresa)&&(!F.estado||(F.estado==='cobrado'?v.cobrado:!v.cobrado))));
+  const tot=vs.reduce((a,v)=>a+vTot(v),0), tk=vs.reduce((a,v)=>a+vKg(v),0);
+  let h=`<div class="bar">${yrSelect()}${prodSelect()}<select class="chip" id="f-estado" aria-label="Estado"><option value="">Todas</option><option value="pendiente" ${F.estado==='pendiente'?'selected':''}>Pendientes de cobro</option><option value="cobrado" ${F.estado==='cobrado'?'selected':''}>Cobradas</option></select><select class="chip" id="f-empresa" aria-label="Empresa"><option value="">Todas las empresas</option>${S.empresas.map(e=>`<option value="${e.id}" ${F.empresa===e.id?'selected':''}>${esc(e.nombre)}</option>`).join('')}</select><span class="grow"></span>${can('ventas_editar')?'<button class="btn primary" data-act="add-venta">+ Nueva venta</button>':''}</div>`;
+  if(!vs.length)return h+emptyBox('Sin ventas en este periodo',S.empresas.length?'Registra cada entrega: empresa, kilos por calidad y precio.':'Primero da de alta las empresas que compran, luego registra cada entrega.',S.empresas.length?'add-venta':'add-empresa',S.empresas.length?'Registrar venta':'Añadir empresa');
+  const rowV=v=>`<button class="row" data-act="venta:${v.id}">${dateBox(v.fecha)}<div class="main"><strong>${F.gv==='empresa'?esc((v.lineas||[]).map(l=>prodName(pidOf(l))+' '+l.calidad).join(', ')):esc(empName(v.empresaId))}</strong><span>${esc(v.num||'')} · ${[...new Set((v.lineas||[]).map(l=>prodName(pidOf(l))))].map(esc).join(', ')} · ${kg(vKg(v))}</span></div><div class="fig"><b>${eur(vTot(v))}</b>${F.gv==='cobro'?'':v.cobrado?'<span class="pill ok">Cobrado</span>':'<span class="pill warn">Pendiente</span>'}</div></button>`;
+  const keyV=F.gv==='empresa'?(v=>v.empresaId):F.gv==='cobro'?(v=>v.cobrado?'1':'0'):(v=>periodoKey(v.fecha,F.gv));
+  let gs=groupBy(vs,keyV);if(F.gv==='empresa')gs.sort((a,b)=>b[1].reduce((s,v)=>s+vTot(v),0)-a[1].reduce((s,v)=>s+vTot(v),0));if(F.gv==='cobro')gs.sort((a,b)=>a[0].localeCompare(b[0]));
+  h+=segBtns('gv',F.gv,[...PERIODOS,['empresa','Empresa'],['cobro','Cobro']])+`<p class="hint" style="margin-bottom:8px">${vs.length} ventas · <b class="num">${kg(tk)}</b> · <b class="num">${eur(tot)}</b></p>`;
+  h+=gs.map(([k,xs],i)=>{const t=xs.reduce((a,v)=>a+vTot(v),0),kk=xs.reduce((a,v)=>a+vKg(v),0),pe=xs.filter(v=>!v.cobrado).reduce((a,v)=>a+vTot(v),0);
+    const title=F.gv==='empresa'?esc(empName(k)):F.gv==='cobro'?(k==='1'?'Cobradas':'Pendientes de cobro'):periodoTitulo(k,F.gv);
+    const kind=F.gv==='cobro'?(k==='1'?'ok':'warn'):'venta';
+    return grp(`v-${F.gv}-${k}`,kind,title,`${xs.length} ${xs.length===1?'venta':'ventas'} · ${kg(kk)}`,eur(t),pe&&F.gv!=='cobro'?`pendiente ${eur(pe)}`:'',xs.map(rowV).join(''),F.gv==='cobro'?k==='0':i===0)}).join('');
+  return h;
+}
+
+function vEmpresas(){
+  let h='';const addE=`<div style="margin-top:10px"><button class="btn" data-act="add-empresa">+ Añadir empresa</button></div>`;
+  if(!S.empresas.length)return emptyBox('Sin empresas','Añade las empresas o cooperativas que compran la fruta. Sus datos salen en los albaranes.','add-empresa','Añadir empresa');
+  const agg={};S.ventas.forEach(v=>{const a=agg[v.empresaId]??={kg:0,eur:0,pend:0,n:0};a.n++;a.kg+=vKg(v,'');a.eur+=vTot(v,'');if(!v.cobrado)a.pend+=vTot(v,'')});
+  h+=`<div class="list">${S.empresas.slice().sort((a,b)=>(a.nombre||'').localeCompare(b.nombre||'')).map(e=>{const a=agg[e.id]||{kg:0,eur:0,pend:0,n:0};return `<button class="row" style="grid-template-columns:minmax(0,1fr) auto" data-act="edit-empresa:${e.id}"><div class="main"><strong>${esc(e.nombre)}</strong><span>${[e.cif,e.telefono].filter(Boolean).map(esc).join(' · ')||'Sin datos fiscales'} · ${a.n} ventas · ${kg(a.kg)}</span></div><div class="fig"><b>${eur(a.eur)}</b>${a.pend?`<span class="pill warn">Debe ${eur(a.pend)}</span>`:'<span class="pill ok">Al día</span>'}</div></button>`}).join('')}</div>`;
+  return h+addE;
+}
+
+function vAjustes(){
+  const t=document.createElement('div');t.innerHTML=vAjustesTodo();
+  const rm=(k,p)=>{if(!can(p))t.querySelector(`[data-k="${k}"]`)?.remove()};
+  rm('s-empresas','empresas');rm('s-usuarios','usuarios');rm('s-datos-de-la-explotacion','config');rm('s-productos','config');rm('s-parcelas','config');rm('s-exportar','exportar');
+  return t.innerHTML;
+}
+function vAjustesTodo(){
+  const c=S.cfg;
+  return `<details class="grp sec" style="margin-top:4px" data-k="s-empresas" ${op('s-empresas',false)}><summary><h2>Empresas <small>${S.empresas.length}</small></h2></summary><div class="gb">${vEmpresas()}</div></details>${vUsuarios()}<details class="grp sec" data-k="s-datos-de-la-explotacion" ${op('s-datos-de-la-explotacion',false)}><summary><h2>Datos de la explotación</h2></summary><div class="gb">
+  <form class="f card" data-form="ajustes">
+    <p class="hint">Estos datos salen en los albaranes.</p>
+    <label>Nombre o razón social<input id="a-nombre" name="nombre" value="${esc(c.nombre)}" placeholder="Ej. Finca Los Almendros"></label>
+    <div class="two"><label>NIF<input id="a-nif" name="nif" value="${esc(c.nif)}"></label><label>Teléfono<input id="a-tel" name="telefono" value="${esc(c.telefono)}" inputmode="tel"></label></div>
+    <label>Dirección<input id="a-dir" name="direccion" value="${esc(c.direccion)}"></label>
+    <div><button class="btn primary" type="submit">Guardar datos</button></div>
+  </form></div></details>
+  <details class="grp sec" data-k="s-productos" ${op('s-productos',false)}><summary><h2>Productos <small>${prods().length}</small></h2></summary><div class="gb">
+  <div class="list">${prods().map(p=>`<button class="row" style="grid-template-columns:minmax(0,1fr) auto" data-act="edit-producto:${p.id}"><div class="main"><strong>${esc(p.nombre)}</strong><span>Calidades: ${cal(p.id).map(esc).join(', ')}</span></div><div class="fig"><b>${kg(stockPorCalidad(p.id).reduce((a,x)=>a+x.co-x.v,0))}</b><span class="hint">en almacén</span></div></button>`).join('')}</div>
+  <div style="margin-top:10px"><button class="btn" data-act="add-producto">+ Añadir producto</button></div></div></details>
+  <details class="grp sec" data-k="s-parcelas" ${op('s-parcelas',false)}><summary><h2>Parcelas <small>${S.parcelas.length}</small></h2></summary><div class="gb">
+  ${S.parcelas.length?`<div class="list">${S.parcelas.map(p=>`<button class="row" style="grid-template-columns:minmax(0,1fr) auto" data-act="edit-parcela:${p.id}"><div class="main"><strong>${esc(p.nombre)}</strong><span>${p.superficie?esc(p.superficie)+' · ':''}${p.plantas?esc(p.plantas)+' plantas':''}${p.nota?' · '+esc(p.nota):''}</span></div><div class="fig"><b>${kg(S.cosechas.filter(x=>x.parcelaId===p.id).reduce((a,x)=>a+(+x.kg||0),0))}</b><span class="hint">total</span></div></button>`).join('')}</div>`:'<p class="hint">Sin parcelas. Añádelas para ver qué campo produce más.</p>'}
+  <div style="margin-top:10px"><button class="btn" data-act="add-parcela">+ Añadir parcela</button></div></div></details>
+  <details class="grp sec" data-k="s-exportar" ${op('s-exportar',false)}><summary><h2>Exportar</h2></summary><div class="gb"><div class="card"><p class="hint" style="margin-bottom:10px">Descarga todas las cosechas, ventas, empresas y el stock en un Excel para el gestor.</p><button class="btn leaf" data-act="export">Descargar Excel</button></div></div></details>`;
+}
+
+function reservado(pid,c){return S.pedidos.filter(abierto).reduce((a,p)=>a+(p.lineas||[]).filter(l=>pidOf(l)===pid&&l.calidad===c).reduce((b,l)=>b+(+l.kg||0),0),0)}
+function stockTable(st){
+  return `<details class="grp sec" data-k="s-stock-en-almacen" ${op('s-stock-en-almacen',true)}><summary><h2>Stock en almacén <small>cosechado − vendido</small></h2></summary><div class="gb"><div class="tscroll"><table class="table"><thead><tr><th>Producto</th><th>Calidad</th><th>Cosechado</th><th>Vendido</th><th>Disponible</th><th>En pedidos</th></tr></thead><tbody>${
+    st.filter(x=>x.co||x.v||reservado(x.p,x.c)||prods().length<3).map(x=>{const d=x.co-x.v,r=reservado(x.p,x.c);return `<tr${go('cosechas','producto='+x.p+';gc=producto;open=c-producto-'+x.p+'|'+x.c)}><td>${esc(prodName(x.p))}</td><td style="text-align:left">${esc(x.c)}</td><td>${kg(x.co)}</td><td${x.v?go('ventas','producto='+x.p+';gv=mes;open=*first'):''}>${kg(x.v)}</td><td class="strong" style="color:${d<0?'var(--bad)':'inherit'}">${kg(d)}</td><td style="color:${r>d?'var(--bad)':'inherit'}"${r?go('pedidos','ped=abiertos;open=*all'):''}>${r?kg(r):'—'}</td></tr>`}).join('')
+  }</tbody></table></div><p class="hint" style="margin-top:6px">«En pedidos» son los kilos de pedidos abiertos que aún no se han entregado.</p></div></details>`;
+}
+function vStock(){return `<div class="bar">${prodSelect()}</div>`+stockTable(stockPorCalidad())}
+
+/* ---------- Usuarios y claves ---------- */
+const COLORS=['#3b7a36','#b8185a','#a35f00','#2a6f97','#7a3db8','#2c7a7a','#9c4221','#4a5a8c'];
+const meUser=()=>me.id?S.usuarios.find(u=>u.id===me.id&&u.activo!==false):null;
+const isAdmin=()=>meUser()?.rol==='admin';
+const PERMS=[
+  ['Pedidos',[['pedidos','Ver y preparar sus pedidos'],['ped_todos','Ver los pedidos de todos'],['ped_crear','Crear, editar, asignar y cancelar pedidos'],['precios','Ver precios e importes']]],
+  ['Cosechas y almacén',[['cos_ver','Ver las cosechas'],['cos_editar','Anotar y corregir cosechas'],['stock','Ver el stock']]],
+  ['Ventas',[['ventas','Ver ventas, cobros y albaranes'],['ventas_editar','Crear ventas y marcar cobros']]],
+  ['Calendario',[['cal_ver','Ver el calendario y sus notas'],['cal_editar','Apuntar notas y avisos en el calendario']]],
+  ['Inventario de los campos',[['inv_ver','Ver el inventario (abonos, tratamientos, material)'],['inv_editar','Anotar entradas, usos y traslados, y crear materiales']]],
+  ['Gestión',[['resumen','Ver el resumen del negocio'],['empresas','Gestionar empresas'],['config','Productos, parcelas y datos de la finca'],['exportar','Exportar a Excel']]]];
+const PKEYS=PERMS.flatMap(g=>g[1].map(x=>x[0]));
+const PRESET_TRAB={pedidos:true,cos_ver:true,cos_editar:true,stock:true,cal_ver:true,cal_editar:true};
+const IMPLICA={cal_editar:'cal_ver',inv_editar:'inv_ver',ped_todos:'pedidos',ped_crear:'pedidos',cos_editar:'cos_ver',ventas_editar:'ventas'};
+const permsOf=u=>u?.rol==='admin'?Object.fromEntries(PKEYS.map(k=>[k,true])):(u?.permisos||PRESET_TRAB);
+const userCan=(u,k)=>!!u&&u.activo!==false&&(u.rol==='admin'||(k!=='usuarios'&&!!permsOf(u)[k]));
+const can=k=>userCan(meUser(),k);
+const esPreset=pm=>PKEYS.every(k=>!!pm[k]===!!PRESET_TRAB[k]);
+const rolLabel=u=>u.rol==='admin'?'Encargado':'Personalizado';
+const rolPill=u=>u.rol==='admin'?'info':'leaf';
+const AVISOS=[['ped_asignado','Pedidos que se le asignan'],['ped_libre','Pedidos nuevos sin asignar'],['ped_estado','Avance de los pedidos: en preparación, preparado, entregado'],['inv_min','Material del inventario por debajo del mínimo']];
+const AKEYS=AVISOS.map(a=>a[0]);
+const avisoDef=(u,k)=>u?.rol==='admin'||k==='ped_asignado'||k==='ped_libre';
+const recibe=(u,k)=>!!u&&u.activo!==false&&(u.avisos?!!u.avisos[k]:avisoDef(u,k));
+const destinatarios=k=>activos().filter(u=>recibe(u,k)).map(u=>u.id);
+const NEED={'add-nota':'cal_editar','edit-nota':'cal_editar','add-mov':'inv_editar','edit-mov':'inv_editar','add-insumo':'inv_editar','edit-insumo':'inv_editar','add-cosecha':'cos_editar','edit-cosecha':'cos_editar','add-venta':'ventas_editar','edit-venta':'ventas_editar','cobrar':'ventas_editar','venta':'ventas','albaran':'ventas','add-pedido':'ped_crear','edit-pedido':'ped_crear','cancel-pedido':'ped_crear','add-empresa':'empresas','edit-empresa':'empresas','add-producto':'config','edit-producto':'config','add-parcela':'config','edit-parcela':'config','export':'exportar','add-usuario':'usuarios','edit-usuario':'usuarios'};
+const NEED_DEL={notas:'cal_editar',movimientos:'inv_editar',insumos:'inv_editar',cosechas:'cos_editar',ventas:'ventas_editar',empresas:'empresas',productos:'config',parcelas:'config',pedidos:'ped_crear'};
+const NEED_FORM={nota:'cal_editar',mov:'inv_editar',insumo:'inv_editar',cosecha:'cos_editar',venta:'ventas_editar',pedido:'ped_crear',empresa:'empresas',producto:'config',parcela:'config',ajustes:'config',usuario:'usuarios'};
+const nameOf=id=>{if(!id)return 'Sin asignar';return byId(S.usuarios,id)?.nombre||'Usuario borrado'};
+const colorOf=id=>{if(!id)return 'var(--muted)';let h=0;for(const c of id)h=(h*31+c.charCodeAt(0))>>>0;return COLORS[h%COLORS.length]};
+const inicial=id=>(nameOf(id)||'?').trim().charAt(0).toUpperCase();
+const activos=()=>S.usuarios.filter(u=>u.activo!==false).sort((a,b)=>(a.nombre||'').localeCompare(b.nombre||''));
+const normU=v=>String(v||'').trim().toLowerCase().replace(/\s+/g,'');
+const hex=b=>[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');
+/* SHA-256 / HMAC / PBKDF2 en JavaScript: respaldo para navegadores que no ofrecen crypto.subtle (p. ej. al abrir el archivo desde el móvil) */
+const K256=new Uint32Array([0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2]);
+function sha256js(m){
+  const l=m.length,nb=((l+9+63)>>6)<<6,b=new Uint8Array(nb);b.set(m);b[l]=0x80;const dv=new DataView(b.buffer);dv.setUint32(nb-4,l*8>>>0);dv.setUint32(nb-8,Math.floor(l/0x20000000));
+  const H=new Uint32Array([0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19]),w=new Uint32Array(64);
+  for(let o=0;o<nb;o+=64){
+    for(let i=0;i<16;i++)w[i]=dv.getUint32(o+i*4);
+    for(let i=16;i<64;i++){const a=w[i-15],c=w[i-2];w[i]=(((a>>>7|a<<25)^(a>>>18|a<<14)^(a>>>3))+w[i-7]+((c>>>17|c<<15)^(c>>>19|c<<13)^(c>>>10))+w[i-16])>>>0}
+    let [A,B,C,D,E,F,G,Hh]=H;
+    for(let i=0;i<64;i++){const t1=(Hh+((E>>>6|E<<26)^(E>>>11|E<<21)^(E>>>25|E<<7))+((E&F)^(~E&G))+K256[i]+w[i])>>>0,t2=(((A>>>2|A<<30)^(A>>>13|A<<19)^(A>>>22|A<<10))+((A&B)^(A&C)^(B&C)))>>>0;Hh=G;G=F;F=E;E=(D+t1)>>>0;D=C;C=B;B=A;A=(t1+t2)>>>0}
+    H[0]+=A;H[1]+=B;H[2]+=C;H[3]+=D;H[4]+=E;H[5]+=F;H[6]+=G;H[7]+=Hh;
+  }
+  const out=new Uint8Array(32),od=new DataView(out.buffer);H.forEach((x,i)=>od.setUint32(i*4,x));return out;
+}
+function pbkdf2js(pw,salt,it){
+  let k=pw.length>64?sha256js(pw):pw;const ip=new Uint8Array(64),opd=new Uint8Array(64);for(let i=0;i<64;i++){ip[i]=(k[i]||0)^0x36;opd[i]=(k[i]||0)^0x5c}
+  const cat=(a,b)=>{const r=new Uint8Array(a.length+b.length);r.set(a);r.set(b,a.length);return r};
+  const hmac=msg=>sha256js(cat(opd,sha256js(cat(ip,msg))));
+  let u=hmac(cat(salt,new Uint8Array([0,0,0,1])));const t=u.slice();
+  for(let i=1;i<it;i++){u=hmac(u);for(let j=0;j<32;j++)t[j]^=u[j]}
+  return t;
+}
+async function hashClave(clave,sal,it=120000){
+  const enc=new TextEncoder();
+  if(window.crypto?.subtle){try{
+    const key=await crypto.subtle.importKey('raw',enc.encode(clave),'PBKDF2',false,['deriveBits']);
+    return hex(await crypto.subtle.deriveBits({name:'PBKDF2',salt:enc.encode(sal),iterations:it,hash:'SHA-256'},key,256));
+  }catch{}}
+  await new Promise(r=>setTimeout(r,20));
+  return hex(pbkdf2js(enc.encode(clave),enc.encode(sal),it));
+}
+const nuevaSal=()=>{const a=new Uint8Array(16);try{crypto.getRandomValues(a)}catch{for(let i=0;i<16;i++)a[i]=Math.random()*256|0}return hex(a)};
+async function claveDatos(clave,it){it=it||(window.crypto?.subtle?120000:30000);const sal=nuevaSal();return {sal,it,hash:await hashClave(clave,sal,it)}}
+const sesGet=()=>{try{return localStorage.getItem(SESS)}catch{return null}};
+const sesSet=v=>{try{v?localStorage.setItem(SESS,v):localStorage.removeItem(SESS)}catch{}};
+function entrar(u){me={id:u.id};vistos.clear();avisosListos=false;avisosNuevos();sesSet(u.id);loginErr='';fallos=0;tab='';closeSheet();render();toast('Hola, '+u.nombre);recordatorios()}
+function salir(){me={id:null};recHechos.clear();for(const k in OPEN)delete OPEN[k];vistos.clear();avisosListos=false;sesSet(null);closeSheet();F.ped='';render()}
+
+function vLogin(){
+  if(!S.usuarios.length)return `<div class="login" data-screen="setup"><h2>Crea el primer usuario</h2><p class="hint">Será el encargado: verá todo y podrá dar de alta al resto del equipo con su propio usuario y clave.</p>
+  <form class="f card" data-form="setup"><label>Nombre<input id="su-nombre" name="nombre" required placeholder="Ej. Paco" autocomplete="name"></label>
+  <label>Usuario<input id="su-usuario" name="usuario" required autocapitalize="none" autocomplete="username" placeholder="Ej. paco"></label>
+  <div class="two"><label>Clave<input id="su-clave" name="clave" type="password" required minlength="4" autocomplete="new-password"></label><label>Repite la clave<input id="su-clave2" name="clave2" type="password" required autocomplete="new-password"></label></div>
+  ${loginErr?`<p class="err">${esc(loginErr)}</p>`:''}<button class="btn primary" type="submit">Crear y entrar</button></form></div>`;
+  return `<div class="login" data-screen="login"><h2>Entrar</h2>
+  <form class="f card" data-form="login"><label>Usuario<input id="li-usuario" name="usuario" required autocapitalize="none" autocomplete="username"></label>
+  <label>Clave<input id="li-clave" name="clave" type="password" required autocomplete="current-password"></label>
+  ${loginErr?`<p class="err">${esc(loginErr)}</p>`:''}<button class="btn primary" type="submit">Entrar</button></form>
+  <p class="hint">¿Has olvidado la clave? Pide al encargado que te ponga una nueva.</p></div>`;
+}
+function vUsuarios(){
+  const rows=S.usuarios.slice().sort((a,b)=>(a.activo===false)-(b.activo===false)||(a.nombre||'').localeCompare(b.nombre||'')).map(u=>`<button class="row" style="grid-template-columns:auto minmax(0,1fr) auto" data-act="edit-usuario:${u.id}"><span class="avatar" style="background:${colorOf(u.id)}">${esc(inicial(u.id))}</span><div class="main"><strong>${esc(u.nombre)}${u.id===me.id?' <span class="hint">(tú)</span>':''}</strong><span>Usuario: ${esc(u.usuario)}</span></div><div class="fig">${u.activo===false?'<span class="pill mute">Desactivado</span>':`<span class="pill ${rolPill(u)}">${rolLabel(u)}</span>`}</div></button>`).join('');
+  return `<details class="grp sec" data-k="s-usuarios" ${op('s-usuarios')}><summary><h2>Usuarios <small>${activos().length} activos</small></h2></summary><div class="gb"><div class="list">${rows}</div><div style="margin-top:10px"><button class="btn" data-act="add-usuario">+ Añadir usuario</button></div><p class="hint" style="margin-top:8px">Cada persona entra con su usuario y su clave. Toca un usuario para elegir a qué tiene acceso: los cambios se aplican al momento, aunque tenga la app abierta. Solo los <b>encargados</b> gestionan usuarios.</p></div></details>`;
+}
+function formUsuario(u={}){
+  const pm=permsOf(u.id?u:{}),tipo=u.rol==='admin'?'admin':'custom';
+  openSheet(u.id?'Editar usuario':'Nuevo usuario',`<form class="f" data-form="usuario" data-id="${u.id||''}">
+    <label>Nombre<input id="u-nombre" name="nombre" required value="${esc(u.nombre)}" placeholder="Ej. Juan"></label>
+    <div class="two"><label>Usuario<input id="u-usuario" name="usuario" required autocapitalize="none" autocomplete="off" value="${esc(u.usuario)}" placeholder="Ej. juan"></label>
+    <label>Tipo de acceso<select id="u-rol" name="rol"><option value="custom" ${tipo==='custom'?'selected':''}>Personalizado</option><option value="admin" ${tipo==='admin'?'selected':''}>Encargado (todo)</option></select></label></div>
+    <div class="perms" id="u-perms">${PERMS.map(([g,ps])=>`<fieldset><legend>${g}</legend>${ps.map(([k,l])=>`<label class="check"><input type="checkbox" id="pm-${k}" name="pm-${k}" ${pm[k]?'checked':''} ${tipo==='admin'?'disabled':''}><span>${l}</span></label>`).join('')}</fieldset>`).join('')}</div>
+    <p class="hint">«Encargado» tiene acceso a todo y gestiona usuarios. En «Personalizado», marca lo que esta persona puede ver y hacer.</p>
+    <div class="perms"><fieldset><legend>Avisos que recibe</legend>${AVISOS.map(([k,l])=>`<label class="check"><input type="checkbox" id="av-${k}" name="av-${k}" ${(u.id?recibe({...u,activo:true},k):avisoDef({rol:u.rol},k))?'checked':''}><span>${l}</span></label>`).join('')}</fieldset></div>
+    <p class="hint">Los mensajes directos de otros usuarios los recibe siempre.</p>
+    <label>${u.id?'Nueva clave <span class="hint">(déjala vacía para no cambiarla)</span>':'Clave inicial'}<input id="u-clave" name="clave" type="text" autocomplete="off" ${u.id?'':'required'} minlength="4" placeholder="Mínimo 4 caracteres"></label>
+    ${u.id&&u.id!==me.id?`<label class="check"><input type="checkbox" id="u-activo" name="activo" ${u.activo!==false?'checked':''}> Puede entrar en la app</label>`:''}
+    <p class="hint">Dale el usuario y la clave a la persona. Después podrá cambiar su clave desde su perfil.</p>
+    <div class="acts"><span></span><div class="r"><button type="button" class="btn" data-act="close">Cancelar</button><button class="btn primary" type="submit">Guardar</button></div></div>
+  </form>`);
+}
+function perfil(){
+  const u=meUser();if(!u)return;
+  openSheet('Mi perfil',`<dl class="kv"><dt>Nombre</dt><dd>${esc(u.nombre)}</dd><dt>Usuario</dt><dd>${esc(u.usuario)}</dd><dt>Acceso</dt><dd>${rolLabel(u)}</dd></dl>
+  <form class="f" data-form="clave" style="margin-top:14px"><h3 style="font-size:1rem">Cambiar mi clave</h3>
+    <label>Clave actual<input id="pc-actual" name="actual" type="password" required autocomplete="current-password"></label>
+    <div class="two"><label>Nueva clave<input id="pc-nueva" name="nueva" type="password" required minlength="4" autocomplete="new-password"></label><label>Repite la nueva<input id="pc-nueva2" name="nueva2" type="password" required autocomplete="new-password"></label></div>
+    <div><button class="btn primary" type="submit">Cambiar clave</button></div></form>
+  <div class="acts" style="margin-top:16px"><span></span><button class="btn danger" data-act="salir">Cerrar sesión</button></div>`);
+}
+
+/* ---------- Pedidos ---------- */
+const EST={pendiente:['Pendiente','warn'],preparacion:['En preparación','info'],preparado:['Preparado','leaf'],entregado:['Entregado','ok'],cancelado:['Cancelado','mute']};
+const abierto=p=>!['entregado','cancelado'].includes(p.estado);
+const late=p=>abierto(p)&&p.entrega&&p.entrega<today();
+const estPill=p=>{const [t,c]=EST[p.estado]||EST.pendiente;return `<span class="pill ${c}">${t}</span>`};
+const resumenLineas=p=>(p.lineas||[]).map(l=>`${prodName(pidOf(l))} ${l.calidad} ${nf.format(+l.kg||0)} kg`).join(' · ');
+function nextPed(){const y=today().slice(0,4);let m=0;S.pedidos.forEach(p=>{const r=/^P(\d{4})-(\d+)$/.exec(p.num||'');if(r&&r[1]===y)m=Math.max(m,+r[2])});return `P${y}-${String(m+1).padStart(4,'0')}`}
+function vPedidos(){
+  const adm=can('ped_crear'),todos=adm||can('ped_todos');const f=F.ped||(todos?'abiertos':'mios');
+  const vis=S.pedidos.filter(p=>todos||p.asignado===me.id||!p.asignado);
+  let ps=vis.filter(p=>f==='todos'||(f==='entregados'?!abierto(p):f==='mios'?(abierto(p)&&p.asignado===me.id):abierto(p)));
+  ps=ps.sort((a,b)=>f==='entregados'?(b.entrega||'').localeCompare(a.entrega||''):(a.entrega||'9').localeCompare(b.entrega||'9')||(a.creado||0)-(b.creado||0));
+  const nMios=S.pedidos.filter(p=>abierto(p)&&p.asignado===me.id).length, nAb=vis.filter(abierto).length;
+  let h=`<div class="bar"><select class="chip" id="f-ped" aria-label="Qué pedidos ver">
+    ${me.id?`<option value="mios" ${f==='mios'?'selected':''}>Mis pedidos (${nMios})</option>`:''}
+    <option value="abiertos" ${f==='abiertos'?'selected':''}>Abiertos (${nAb})</option>
+    <option value="entregados" ${f==='entregados'?'selected':''}>Entregados y cancelados</option>
+    <option value="todos" ${f==='todos'?'selected':''}>Todos</option></select><span class="grow"></span>${adm?'<button class="btn primary" data-act="add-pedido">+ Nuevo pedido</button>':''}</div>`;
+  if(!ps.length){
+    const t=f==='mios'?'No tienes pedidos asignados':f==='entregados'?'Aún no hay pedidos entregados':'No hay pedidos abiertos';
+    const d=adm?'Crea un pedido con lo que pide cada empresa y asígnalo a quien lo va a preparar.':'Cuando el encargado te asigne un pedido aparecerá aquí.';
+    return h+emptyBox(t,d,adm&&f!=='entregados'?'add-pedido':'',adm?'Crear pedido':'');
+  }
+  const rowP=p=>`<button class="row" data-act="pedido:${p.id}">${dateBox(p.entrega)}<div class="main"><strong>${esc(empName(p.empresaId))}</strong><span>${esc(resumenLineas(p))}</span><span class="who"><i style="background:${colorOf(p.asignado)}"></i>${esc(nameOf(p.asignado))} · ${esc(p.num||'')}</span></div><div class="fig"><b class="num">${kg((p.lineas||[]).reduce((a,l)=>a+(+l.kg||0),0))}</b>${late(p)?`<div class="pills">${estPill(p)}</div>`:''}</div></button>`;
+  const ORD=['retrasado','pendiente','preparacion','preparado','entregado','cancelado'];
+  const gs=groupBy(ps,p=>late(p)?'retrasado':(p.estado||'pendiente')).sort((a,b)=>ORD.indexOf(a[0])-ORD.indexOf(b[0]));
+  h+=gs.map(([k,xs])=>{const [t,c]=k==='retrasado'?['Retrasados','late']:EST[k]||EST.pendiente;const kk=xs.reduce((a,p)=>a+(p.lineas||[]).reduce((b,l)=>b+(+l.kg||0),0),0);
+    const prox=abierto(xs[0])?'Próxima entrega '+fdate(xs[0].entrega):'Última '+fdate(xs[0].entrega);
+    return grp(`p-${k}`,c,t,`${xs.length} ${xs.length===1?'pedido':'pedidos'} · ${prox}`,kg(kk),'',xs.map(rowP).join(''),!['entregado','cancelado'].includes(k))}).join('');
+  return h;
+}
+const teamOpts=sel=>`<option value="">Sin asignar</option>`+activos().map(u=>`<option value="${u.id}" ${u.id===sel?'selected':''}>${esc(u.nombre)}</option>`).join('');
+function formPedido(p={}){
+  if(!S.empresas.length){toast('Primero añade una empresa en Ajustes.');formEmpresa();return}
+  const lines=(p.lineas&&p.lineas.length?p.lineas.map(l=>({...l,productoId:pidOf(l)})):[{}]);
+  openSheet(p.id?`Editar pedido ${p.num||''}`:'Nuevo pedido', `<form class="f ${can('precios')?'':'noprice'}" data-form="pedido" data-id="${p.id||''}">
+    <label>Empresa<select id="v-emp" name="empresaId" required>${S.empresas.map(e=>`<option value="${e.id}" ${p.empresaId===e.id?'selected':''}>${esc(e.nombre)}</option>`).join('')}</select></label>
+    <div class="two"><label>Fecha de entrega<input type="date" id="pe-ent" name="entrega" required value="${esc(p.entrega||today())}"></label><label>Lo prepara<select id="pe-asig" name="asignado">${teamOpts(p.asignado)}</select></label></div>
+    <div><div class="lines" id="lines">${lines.map(lineHTML).join('')}</div>
+    <button type="button" class="btn small" style="margin-top:8px" data-act="add-line">+ Otra línea</button></div>
+    <div class="total"><span class="num" id="v-kgt">0 kg</span><b class="num" id="v-tot">0 €</b></div>
+    <label>Instrucciones<textarea id="pe-nota" name="nota" placeholder="Tipo de caja, hora de carga, etiquetas…">${esc(p.nota)}</textarea></label>
+    <div class="acts"><span></span><div class="r"><button type="button" class="btn" data-act="close">Cancelar</button><button class="btn primary" type="submit">Guardar pedido</button></div></div>
+  </form>`);
+  recalc();
+}
+function detPedido(p){
+  if(!p){closeSheet();return}
+  openPed=p.id;
+  const adm=can('ped_crear'), verPrecio=can('precios'), st=stockPorCalidad(''), edit=abierto(p);
+  const disp=(pid,c)=>{const x=st.find(x=>x.p===pid&&x.c===c);return x?x.co-x.v:0};
+  const hist=(p.historial||[]).slice().reverse().map(h=>`<li>${esc((EST[h.e]||[h.e])[0])} · ${esc(nameOf(h.u))} · ${new Date(h.t).toLocaleString('es-ES',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</li>`).join('');
+  openSheet(`Pedido ${p.num||''}`,`<dl class="kv"><dt>Empresa</dt><dd>${esc(empName(p.empresaId))}</dd><dt>Entrega</dt><dd>${fdate(p.entrega)} ${late(p)?'<span class="pill late">Retrasado</span>':''}</dd><dt>Estado</dt><dd>${estPill(p)}</dd><dt>Lo prepara</dt><dd><span class="who"><i style="background:${colorOf(p.asignado)}"></i>${esc(nameOf(p.asignado))}</span></dd>${p.nota?`<dt>Instrucciones</dt><dd>${esc(p.nota)}</dd>`:''}</dl>
+  <div class="list" id="pedLines" style="margin-top:12px">${(p.lineas||[]).map((l,i)=>{const d=disp(pidOf(l),l.calidad);return `<div class="pl"><div class="main"><strong>${esc(prodName(pidOf(l)))} · ${esc(l.calidad)}</strong><span>Pedido <b class="num">${kg(l.kg)}</b>${verPrecio?` · ${eur(l.precio)}/kg`:''}</span><span style="color:${d<(+l.kg||0)?'var(--bad)':'var(--muted)'}">En almacén ${kg(d)}</span></div><label class="plq">Preparado${edit?`<input class="qty" data-i="${i}" inputmode="decimal" aria-label="Kilos preparados" placeholder="${show(l.kg)}" value="${l.kgReal!=null?show(l.kgReal):''}">`:`<b class="num">${kg(l.kgReal??l.kg)}</b>`}</label></div>`}).join('')}</div>
+  ${edit?'<p class="hint" style="margin-top:6px">Apunta los kilos reales que se cargan. Si lo dejas vacío se toman los kilos pedidos.</p>':''}
+  ${hist?`<div class="sec" style="margin-block:14px 0"><h2 style="font-size:.9rem">Historial</h2><ul class="hist">${hist}</ul></div>`:''}
+  <div class="acts" style="margin-top:14px"><div class="r">${adm&&edit?`<button class="btn small" data-act="edit-pedido:${p.id}">Editar</button><button class="btn danger small" data-act="cancel-pedido:${p.id}">Cancelar pedido</button>`:''}${can('ventas')&&p.ventaId&&byId(S.ventas,p.ventaId)?`<button class="btn small" data-act="venta:${p.ventaId}">Ver venta y albarán</button>`:''}${adm&&!edit&&p.estado==='cancelado'?delBtn('pedidos',p.id):''}</div>
+  <div class="r">${edit&&me.id&&p.asignado!==me.id?`<button class="btn small" data-act="asignarme:${p.id}">Me lo quedo yo</button>`:''}${
+    p.estado==='pendiente'?`<button class="btn primary" data-act="estado:${p.id}:preparacion">Empezar a preparar</button>`:
+    p.estado==='preparacion'?`<button class="btn" data-act="guardar-kg:${p.id}">Guardar kilos</button><button class="btn leaf" data-act="estado:${p.id}:preparado">Marcar preparado</button>`:
+    p.estado==='preparado'?`<button class="btn" data-act="estado:${p.id}:preparacion">Volver a preparación</button><button class="btn primary" data-act="entregar:${p.id}">Marcar entregado</button>`:''}</div></div>`);
+}
+function leerKg(p){
+  const ins=[...document.querySelectorAll('#pedLines .qty')];
+  return (p.lineas||[]).map((l,i)=>{const el=ins.find(x=>+x.dataset.i===i);if(!el)return {...l};const v=el.value.trim();const o={...l};if(v)o.kgReal=num(v);else delete o.kgReal;return o});
+}
+async function savePedido(p,cambios,estado){
+  const {id,...rest}=p;const data={...rest,...cambios};
+  if(estado&&estado!==p.estado){data.estado=estado;data.historial=[...(p.historial||[]),{e:estado,u:me.id||'',t:Date.now()}].slice(-30)}
+  if(await put('pedidos',id,data)){
+    detPedido({...data,id});
+    if(estado&&['preparacion','preparado','entregado'].includes(estado)){for(const d of destinatarios('ped_estado'))await notificar(d,`${nameOf(me.id)}: pedido ${(EST[estado]||[estado])[0].toLowerCase()} · ${resumenPed(data)}`,{pedidoId:id})}
+    if(cambios.asignado&&cambios.asignado!==p.asignado&&cambios.asignado!==me.id)await avisa(cambios.asignado,'ped_asignado',`Te han asignado un pedido · ${resumenPed(data)}`,{pedidoId:id});
+    return true}return false;
+}
+async function entregar(p){
+  const lineas=leerKg(p);const fecha=today();
+  const vl=lineas.map(l=>({productoId:pidOf(l),calidad:l.calidad,kg:l.kgReal!=null?l.kgReal:(+l.kg||0),precio:+l.precio||0})).filter(l=>l.kg>0);
+  if(!vl.length){toast('No hay kilos que entregar.');return}
+  let ventaId=S.ventas.find(v=>v.pedidoId===p.id)?.id;
+  if(!ventaId){
+    const ref=db.collection('ventas').doc();
+    try{await ref.set({fecha,empresaId:p.empresaId,lineas:vl,total:Math.round(vl.reduce((a,l)=>a+l.kg*l.precio,0)*100)/100,cobrado:false,nota:`Pedido ${p.num||''}`,num:nextNum(fecha),creado:Date.now(),pedidoId:p.id})}catch(e){toast(errMsg(e));return}
+    ventaId=ref.id;
+  }
+  if(await savePedido(p,{lineas,ventaId,entregado:fecha},'entregado'))toast('Pedido entregado. Venta y albarán creados.');
+}
+
+/* ---------- Inventario de los campos ---------- */
+const CATS=['Abono','Fitosanitario','Riego','Envases','Herramientas','Otros'];
+const UNIDADES=['kg','L','sacos','ud','cajas','rollos','m'];
+const ALM='';
+const locName=id=>id?parName(id):'Almacén general';
+const locs=()=>[{id:ALM,nombre:'Almacén general'},...S.parcelas.map(p=>({id:p.id,nombre:p.nombre}))];
+const insumo=id=>byId(S.insumos,id);
+const cant=(n,u)=>nf.format(Math.round((n||0)*100)/100)+' '+(u||'');
+function invStock(){
+  const m=new Map(),add=(i,l,q)=>{const k=i+'|'+(l||'');m.set(k,(m.get(k)||0)+q)};
+  S.movimientos.forEach(x=>{const q=+x.cantidad||0;if(x.tipo==='entrada')add(x.insumoId,x.parcelaId,q);else if(x.tipo==='uso')add(x.insumoId,x.parcelaId,-q);else if(x.tipo==='traslado'){add(x.insumoId,x.parcelaId,-q);add(x.insumoId,x.destinoId,q)}});
+  return m;
+}
+const stockEn=(m,i,l)=>m.get(i+'|'+(l||''))||0;
+const totalDe=(m,i)=>locs().reduce((a,l)=>a+stockEn(m,i,l.id),0);
+const bajo=(m,a)=>+a.minimo>0&&totalDe(m,a.id)<+a.minimo;
+const TIPO={entrada:['Entrada','+'],uso:['Uso en el campo','−'],traslado:['Traslado','⇄']};
+function vInventario(){
+  const ed=can('inv_editar'),m=invStock(),arts=S.insumos.slice().sort((a,b)=>(a.categoria||'').localeCompare(b.categoria||'')||(a.nombre||'').localeCompare(b.nombre||''));
+  let h=ed?`<div class="triple" style="margin-bottom:10px"><button class="btn leaf" data-act="add-mov:entrada">+ Entrada</button><button class="btn primary" data-act="add-mov:uso">− Uso</button><button class="btn" data-act="add-mov:traslado">⇄ Traslado</button></div><div style="margin-bottom:12px"><button class="btn" style="width:100%;justify-content:center" data-act="add-insumo">+ Añadir material nuevo</button></div>`:'';
+  if(!arts.length)return h+emptyBox('Inventario vacío','Da de alta los abonos, tratamientos, cajas y demás material. Después anota las entradas y lo que se gasta en cada campo.','add-insumo','Añadir primer material');
+  const bajos=arts.filter(a=>bajo(m,a));
+  if(bajos.length)h+=`<div class="lowbar"><b>${bajos.length} ${bajos.length===1?'material con poco stock':'materiales con poco stock'}:</b> ${bajos.map(a=>esc(a.nombre)+' ('+cant(totalDe(m,a.id),a.unidad)+')').join(', ')}</div>`;
+  h+=segBtns('gi',F.gi,[['campo','Campo'],['articulo','Material'],['mov','Movimientos']]);
+  if(F.gi==='campo'){
+    h+=locs().map(l=>{
+      const rows=arts.map(a=>({a,q:stockEn(m,a.id,l.id),usado:S.movimientos.some(x=>x.insumoId===a.id&&((x.parcelaId||'')===l.id||(x.tipo==='traslado'&&(x.destinoId||'')===l.id)))})).filter(r=>r.q||r.usado);
+      const con=rows.filter(r=>r.q>0).length;
+      const body=rows.length?rows.map(r=>`<button class="row" style="grid-template-columns:minmax(0,1fr) auto" data-act="inv:${r.a.id}:${l.id||'_'}"><div class="main"><strong>${esc(r.a.nombre)}</strong><span>${esc(r.a.categoria||'')}</span></div><div class="fig"><b style="color:${r.q<0?'var(--bad)':'inherit'}">${cant(r.q,r.a.unidad)}</b></div></button>`).join(''):`<div class="row" style="cursor:default;grid-template-columns:1fr"><span class="hint">Sin material en ${l.id?'este campo':'el almacén'}.</span></div>`;
+      return grp('i-c-'+(l.id||'alm'),l.id?'campo':'alm',esc(l.nombre),`${con} ${con===1?'material':'materiales'} con existencias`,'', '',body);
+    }).join('');
+  }else if(F.gi==='articulo'){
+    h+=arts.map(a=>{
+      const t=totalDe(m,a.id),ls=locs().map(l=>({l,q:stockEn(m,a.id,l.id)})).filter(x=>x.q);
+      const comprado=S.movimientos.filter(x=>x.insumoId===a.id&&x.tipo==='entrada').reduce((s,x)=>s+(+x.coste||0),0);
+      const body=(ls.length?ls.map(x=>`<button class="row" style="grid-template-columns:minmax(0,1fr) auto" data-act="inv:${a.id}:${x.l.id||'_'}"><div class="main"><strong>${esc(x.l.nombre)}</strong></div><div class="fig"><b style="color:${x.q<0?'var(--bad)':'inherit'}">${cant(x.q,a.unidad)}</b></div></button>`).join(''):`<div class="row" style="cursor:default;grid-template-columns:1fr"><span class="hint">Sin existencias.</span></div>`)
+        +`<div class="row" style="cursor:default;grid-template-columns:minmax(0,1fr) auto"><span class="hint">${+a.minimo>0?'Avisar por debajo de '+cant(+a.minimo,a.unidad):'Sin aviso de stock bajo'}${can('precios')&&comprado?' · Comprado: '+eur(comprado):''}</span>${ed?`<span class="btn small" data-act="edit-insumo:${a.id}" role="button" tabindex="0">Editar material</span>`:''}</div>`;
+      return grp('i-a-'+a.id,'art',esc(a.nombre),esc(a.categoria||''),cant(t,a.unidad),bajo(m,a)?'<span class="pill warn">Stock bajo</span>':'',body);
+    }).join('')+(ed?'<div style="margin-top:10px"><button class="btn" data-act="add-insumo">+ Añadir material</button></div>':'');
+  }else{
+    const ms=sortDesc(S.movimientos);
+    if(!ms.length)h+=emptyBox('Sin movimientos','Anota una entrada cuando llegue material y un uso cuando se gaste en un campo.','','');
+    if(ms.length)h+=segBtns('gm',F.gm,PERIODOS).replace('Agrupar por','Ver por');
+    h+=groupBy(ms,x=>periodoKey(x.fecha,F.gm)).map(([k,xs])=>grp('i-m-'+F.gm+'-'+k,'cosecha',periodoTitulo(k,F.gm),`${xs.length} ${xs.length===1?'movimiento':'movimientos'}`,'','',xs.map(rowMov).join(''))).join('');
+  }
+  return h;
+}
+const rowMov=x=>{const a=insumo(x.insumoId)||{},ed=can('inv_editar');const donde=x.tipo==='traslado'?`${locName(x.parcelaId)} → ${locName(x.destinoId)}`:locName(x.parcelaId);
+  return `<button class="row" ${ed?`data-act="edit-mov:${x.id}"`:'disabled'}>${dateBox(x.fecha)}<div class="main"><strong>${esc(a.nombre||'Material borrado')}</strong><span>${TIPO[x.tipo]?.[0]||''} · ${esc(donde)}${x.nota?' · '+esc(x.nota):''}</span></div><div class="fig"><b>${x.tipo==='entrada'?'+':x.tipo==='uso'?'−':''}${cant(+x.cantidad,a.unidad)}</b></div></button>`};
+function detInv(aid,lid){
+  const a=insumo(aid);if(!a)return;const m=invStock(),ed=can('inv_editar');
+  const ms=sortDesc(S.movimientos.filter(x=>x.insumoId===aid&&((x.parcelaId||'')===lid||(x.tipo==='traslado'&&(x.destinoId||'')===lid)))).slice(0,15);
+  openSheet(a.nombre,`<dl class="kv"><dt>Campo</dt><dd>${esc(locName(lid))}</dd><dt>Hay aquí</dt><dd><b>${cant(stockEn(m,aid,lid),a.unidad)}</b></dd><dt>En toda la finca</dt><dd>${cant(totalDe(m,aid),a.unidad)}</dd><dt>Tipo</dt><dd>${esc(a.categoria||'')}</dd>${a.nota?`<dt>Nota</dt><dd>${esc(a.nota)}</dd>`:''}</dl>
+  ${ed?`<div class="triple" style="margin-top:12px"><button class="btn leaf" data-act="add-mov:entrada:${aid}~${lid||'_'}">+ Entrada</button><button class="btn primary" data-act="add-mov:uso:${aid}~${lid||'_'}">− Uso</button><button class="btn" data-act="add-mov:traslado:${aid}~${lid||'_'}">⇄ Traslado</button></div>`:''}
+  <div class="sec" style="margin-block:14px 0"><h2 style="font-size:.9rem">Últimos movimientos en ${esc(locName(lid))}</h2>${ms.length?`<div class="list">${ms.map(rowMov).join('')}</div>`:'<p class="hint">Todavía no hay movimientos.</p>'}</div>`);
+}
+function formMov(x={},pre={}){
+  if(!S.insumos.length){toast('Primero añade un material al inventario.');formInsumo();return}
+  const tipo=x.tipo||pre.tipo||'entrada',aid=x.insumoId||pre.insumoId||S.insumos[0].id,lid=x.id?(x.parcelaId||''):(pre.loc??(tipo==='entrada'?ALM:(S.parcelas[0]?.id||ALM)));
+  const lo=(sel,skip)=>locs().map(l=>`<option value="${l.id||'_'}" ${l.id===sel?'selected':''}>${esc(l.nombre)}</option>`).join('');
+  const arts=S.insumos.slice().sort((a,b)=>(a.nombre||'').localeCompare(b.nombre||''));
+  openSheet(x.id?'Editar movimiento':TIPO[tipo][0],`<form class="f" data-form="mov" data-id="${x.id||''}">
+    <label>Qué quieres anotar<select id="mv-tipo" name="tipo"><option value="entrada" ${tipo==='entrada'?'selected':''}>Entrada: llega material</option><option value="uso" ${tipo==='uso'?'selected':''}>Uso: se gasta en un campo</option><option value="traslado" ${tipo==='traslado'?'selected':''}>Traslado: se mueve de un sitio a otro</option></select></label>
+    <label>Material <span class="btn small" style="float:right;margin-top:-4px" data-act="add-insumo" role="button" tabindex="0">+ Nuevo</span><select id="mv-art" name="insumoId">${arts.map(a=>`<option value="${a.id}" ${a.id===aid?'selected':''}>${esc(a.nombre)} (${esc(a.unidad||'')})</option>`).join('')}</select></label>
+    <div class="two"><label>Fecha<input type="date" id="mv-fecha" name="fecha" required value="${esc(x.fecha||today())}"></label><label>Cantidad<input id="mv-cant" name="cantidad" required inputmode="decimal" placeholder="0" value="${show(x.cantidad)}"></label></div>
+    <label><span id="mv-l1">Campo</span><select id="mv-loc" name="parcelaId">${lo(lid)}</select></label>
+    <label id="mv-destw"><span>Hasta</span><select id="mv-dest" name="destinoId">${lo(x.destinoId??(S.parcelas.find(p=>p.id!==lid)?.id??ALM))}</select></label>
+    <p class="hint" id="mv-hay"></p>
+    ${can('precios')?`<label id="mv-costew">Coste de la compra en € <span class="hint">(opcional)</span><input id="mv-coste" name="coste" inputmode="decimal" value="${show(x.coste)}"></label>`:''}
+    <label>Nota<input id="mv-nota" name="nota" value="${esc(x.nota)}" placeholder="Opcional: proveedor, dosis, motivo…"></label>
+    <div class="acts">${delBtn('movimientos',x.id)}<div class="r"><button type="button" class="btn" data-act="close">Cancelar</button><button class="btn primary" type="submit">Guardar</button></div></div>
+  </form>`);
+  movUI();
+}
+function movUI(){
+  const t=$('#mv-tipo');if(!t)return;const tipo=t.value;
+  $('#mv-destw').hidden=tipo!=='traslado';const cw=$('#mv-costew');if(cw)cw.hidden=tipo!=='entrada';
+  $('#mv-l1').textContent=tipo==='entrada'?'Dónde se guarda':tipo==='uso'?'Campo donde se gasta':'Desde';
+  const a=insumo($('#mv-art').value),l=$('#mv-loc').value;const lid=l==='_'?'':l;
+  $('#mv-hay').textContent=a?`En ${locName(lid)} hay ${cant(stockEn(invStock(),a.id,lid),a.unidad)}.`:'';
+}
+function formInsumo(a={}){
+  openSheet(a.id?'Editar material':'Nuevo material',`<form class="f" data-form="insumo" data-id="${a.id||''}">
+    <label>Nombre<input id="in-nombre" name="nombre" required value="${esc(a.nombre)}" placeholder="Ej. Abono NPK 15-15-15"></label>
+    <div class="two"><label>Tipo<select id="in-cat" name="categoria">${CATS.map(c=>`<option ${c===(a.categoria||'Abono')?'selected':''}>${c}</option>`).join('')}</select></label>
+    <label>Se mide en<select id="in-uni" name="unidad">${UNIDADES.map(u=>`<option ${u===(a.unidad||'kg')?'selected':''}>${u}</option>`).join('')}</select></label></div>
+    <label>Avisar cuando quede menos de <span class="hint">(opcional)</span><input id="in-min" name="minimo" inputmode="decimal" value="${show(a.minimo)}" placeholder="Ej. 100"></label>
+    <label>Nota<input id="in-nota" name="nota" value="${esc(a.nota)}" placeholder="Opcional: proveedor, dosis habitual…"></label>
+    <div class="acts">${delBtn('insumos',a.id)}<div class="r"><button type="button" class="btn" data-act="close">Cancelar</button><button class="btn primary" type="submit">Guardar</button></div></div>
+  </form>`);
+}
+
+/* ---------- Calendario y notas ---------- */
+const TIPOS_NOTA=[['Nota','var(--muted)'],['Tarea','var(--accent)'],['Riego','#2a8fbd'],['Abonado','var(--leaf)'],['Tratamiento','var(--warn)'],['Recogida','var(--ok)'],['Visita o entrega','#8a5cd0']];
+const colorNota=t=>(TIPOS_NOTA.find(x=>x[0]===t)||TIPOS_NOTA[0])[1];
+const paraMi=n=>(n.avisar||[]).includes('*')||(n.avisar||[]).includes(me.id);
+const notasVis=()=>S.notas.filter(n=>!n.privada||n.autor===me.id||paraMi(n));
+const addDias=(f,n)=>{const d=new Date(f+'T12:00');d.setDate(d.getDate()+n);return isoD(d)};
+const avisadosTxt=n=>{const a=n.avisar||[];return !a.length?'':a.includes('*')?'Todos':a.map(nameOf).join(', ')};
+const RECS=[['','Sin recordatorio'],['0','El mismo día'],['1','Un día antes'],['2','Dos días antes'],['7','Una semana antes']];
+const pedidosDia=f=>(can('pedidos')||can('ped_todos')||can('ped_crear'))?S.pedidos.filter(p=>p.entrega===f&&p.estado!=='cancelado'&&(can('ped_todos')||can('ped_crear')||p.asignado===me.id||!p.asignado)):[];
+const ordenNotas=(a,b)=>(a.fecha||'').localeCompare(b.fecha||'')||(a.hora||'99').localeCompare(b.hora||'99')||(a.creado||0)-(b.creado||0);
+const rowNota=(n,conFecha)=>`<button class="row ${n.hecho?'done':''}" style="grid-template-columns:auto minmax(0,1fr) auto" data-act="nota:${n.id}">${conFecha?dateBox(n.fecha):`<span class="ndot" style="background:${colorNota(n.tipo)}"></span>`}<div class="main"><strong>${esc(n.titulo)}</strong><span>${[n.hora,n.tipo,n.parcelaId?parName(n.parcelaId):'',n.privada?'Privada':''].filter(Boolean).map(esc).join(' · ')}</span>${(n.avisar||[]).length?`<span>Avisa a: ${esc(avisadosTxt(n))}</span>`:''}</div><div class="fig">${n.hecho?'<span class="pill ok">Hecha</span>':(n.avisar||[]).length?'<span class="pill info">Con aviso</span>':''}</div></button>`;
+function vCalendario(){
+  const [y,m]=F.calMes.split('-').map(Number),hoy=today(),vis=notasVis();
+  const porDia={};vis.forEach(n=>(porDia[n.fecha]??=[]).push(n));
+  const first=new Date(y,m-1,1),off=(first.getDay()+6)%7,dim=new Date(y,m,0).getDate();
+  let cells='';for(let i=0;i<off;i++)cells+='<span></span>';
+  for(let d=1;d<=dim;d++){const f=`${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`,ns=(porDia[f]||[]),ps=pedidosDia(f);
+    const dots=ns.slice(0,3).map(n=>`<i style="background:${colorNota(n.tipo)}"></i>`).join('')+(ps.length?'<i class="ped"></i>':'');
+    cells+=`<button data-act="cal-dia:${f}" class="${f===hoy?'hoy':''} ${f===F.calDia?'sel':''}" aria-label="${d} de ${mesLargo(f)}${ns.length?', '+ns.length+' notas':''}${ps.length?', '+ps.length+' entregas':''}" ${f===F.calDia?'aria-pressed="true"':''}>${d}<span class="dots">${dots}</span>${ns.length>3?`<span class="more">+${ns.length-3}</span>`:''}</button>`}
+  const sel=F.calDia,ns=(porDia[sel]||[]).slice().sort(ordenNotas),ps=pedidosDia(sel);
+  let h=`<div class="calhead"><button class="x" data-act="cal-mes:-1" aria-label="Mes anterior">‹</button><h2>${mesLargo(F.calMes+'-01')}</h2><button class="x" data-act="cal-mes:1" aria-label="Mes siguiente">›</button><button class="btn small" data-act="cal-hoy">Hoy</button></div>
+  <div class="cal">${['L','M','X','J','V','S','D'].map(d=>`<span class="dow">${d}</span>`).join('')}${cells}</div>
+  <div class="callegend">${TIPOS_NOTA.map(([t,c])=>`<span><i style="background:${c}"></i>${t}</span>`).join('')}<span><i style="background:var(--accent);border-radius:2px"></i>Entrega de pedido</span></div>
+  <div class="dayhead"><h2>${periodoTitulo(sel,'dia')}${sel===hoy?' · hoy':''}</h2>${can('cal_editar')?`<button class="btn primary small" data-act="add-nota:${sel}">+ Nota</button>`:''}</div>`;
+  h+=(ns.length||ps.length)?`<div class="list">${ns.map(n=>rowNota(n)).join('')}${ps.map(p=>`<button class="row" style="grid-template-columns:auto minmax(0,1fr) auto" data-act="pedido:${p.id}"><span class="ndot" style="background:var(--accent);border-radius:3px"></span><div class="main"><strong>Entrega: ${esc(empName(p.empresaId))}</strong><span>${esc(p.num||'')} · ${kg((p.lineas||[]).reduce((a,l)=>a+(+l.kg||0),0))} · ${esc(nameOf(p.asignado))}</span></div><div class="fig">${estPill(p)}</div></button>`).join('')}</div>`:`<div class="empty"><strong>Nada apuntado este día</strong>${can('cal_editar')?'Toca «+ Nota» para apuntar un riego, un tratamiento, una visita o lo que necesites.':''}</div>`;
+  const prox=vis.filter(n=>n.fecha>hoy&&n.fecha<=addDias(hoy,30)).sort(ordenNotas),atr=vis.filter(n=>n.fecha<hoy&&!n.hecho&&(n.avisar||[]).length&&n.fecha>=addDias(hoy,-60)).sort((a,b)=>ordenNotas(b,a));
+  h+=`<div style="margin-top:16px">${grp('cal-prox','info','Próximos 30 días',`${prox.length} ${prox.length===1?'nota':'notas'}`,'','',prox.length?prox.map(n=>rowNota(n,true)).join(''):'<div class="row" style="cursor:default;grid-template-columns:1fr"><span class="hint">No hay nada apuntado.</span></div>')}${atr.length?grp('cal-atr','late','Avisos pasados sin marcar como hechos',`${atr.length} ${atr.length===1?'nota':'notas'}`,'','',atr.map(n=>rowNota(n,true)).join('')):''}</div>`;
+  return h;
+}
+function detNota(n){
+  if(!n)return;const mia=n.autor===me.id||isAdmin();
+  openSheet(n.titulo,`<dl class="kv"><dt>Día</dt><dd>${periodoTitulo(n.fecha,'dia')}${n.hora?' · '+esc(n.hora):''}</dd><dt>Tipo</dt><dd><span class="who"><i style="background:${colorNota(n.tipo)}"></i>${esc(n.tipo||'Nota')}</span></dd>${n.parcelaId?`<dt>Campo</dt><dd>${esc(parName(n.parcelaId))}</dd>`:''}<dt>La apuntó</dt><dd>${esc(nameOf(n.autor))}</dd>${(n.avisar||[]).length?`<dt>Avisa a</dt><dd>${esc(avisadosTxt(n))}</dd><dt>Recordatorio</dt><dd>${esc((RECS.find(r=>r[0]===String(n.rec??''))||RECS[0])[1])}</dd>`:''}${n.privada?'<dt>Visible</dt><dd>Solo quien la apuntó y los avisados</dd>':''}<dt>Estado</dt><dd>${n.hecho?`<span class="pill ok">Hecha</span> ${esc(nameOf(n.hechoPor))}`:'<span class="pill mute">Sin marcar</span>'}</dd></dl>
+  ${n.texto?`<div class="notetxt">${esc(n.texto)}</div>`:''}
+  <div class="acts" style="margin-top:14px">${mia&&can('cal_editar')?`<button class="btn" data-act="edit-nota:${n.id}">Editar</button>`:'<span></span>'}<div class="r"><button class="btn ${n.hecho?'':'leaf'}" data-act="nota-hecha:${n.id}">${n.hecho?'Marcar como no hecha':'Marcar como hecha'}</button></div></div>`);
+}
+function formNota(n={},fecha){
+  const av=n.avisar||[],us=activos();
+  openSheet(n.id?'Editar nota':'Nueva nota',`<form class="f" data-form="nota" data-id="${n.id||''}">
+    <label>Título<input id="no-titulo" name="titulo" required maxlength="120" value="${esc(n.titulo)}" placeholder="Ej. Tratamiento contra cochinilla"></label>
+    <div class="two"><label>Día<input type="date" id="no-fecha" name="fecha" required value="${esc(n.fecha||fecha||F.calDia||today())}"></label><label>Hora<input type="time" id="no-hora" name="hora" value="${esc(n.hora)}"></label></div>
+    <div class="two"><label>Tipo<select id="no-tipo" name="tipo">${TIPOS_NOTA.map(([t])=>`<option ${t===(n.tipo||'Nota')?'selected':''}>${t}</option>`).join('')}</select></label><label>Campo<select id="no-par" name="parcelaId"><option value="">Ninguno</option>${S.parcelas.map(p=>`<option value="${p.id}" ${n.parcelaId===p.id?'selected':''}>${esc(p.nombre)}</option>`).join('')}</select></label></div>
+    <label>Detalles<textarea id="no-texto" name="texto" maxlength="2000" placeholder="Opcional: dosis, quién viene, qué hay que preparar…">${esc(n.texto)}</textarea></label>
+    <div class="perms"><fieldset><legend>Avisar a</legend>
+      <label class="check"><input type="checkbox" id="na-todos" name="na-*" ${av.includes('*')?'checked':''}><span><b>Todos los usuarios</b></span></label>
+      ${us.map(u=>`<label class="check"><input type="checkbox" id="na-${u.id}" name="na-${u.id}" ${av.includes(u.id)?'checked':''}><span>${esc(u.nombre)}${u.id===me.id?' (yo)':''}</span></label>`).join('')}
+    </fieldset></div>
+    <label class="check"><input type="checkbox" id="no-ahora" name="ahora" checked> Enviarles un aviso ahora, al guardar</label>
+    <label>Recordatorio<select id="no-rec" name="rec">${RECS.map(([v,l])=>`<option value="${v}" ${String(n.rec??(n.id?'':'0'))===v?'selected':''}>${l}</option>`).join('')}</select></label>
+    <label class="check"><input type="checkbox" id="no-priv" name="privada" ${n.privada?'checked':''}> Nota privada: solo la vemos yo y los avisados</label>
+    <p class="hint">Los avisos solo llegan a las personas marcadas. El recordatorio les aparece en Avisos cuando abren la app ese día.</p>
+    <div class="acts">${delBtn('notas',n.id)}<div class="r"><button type="button" class="btn" data-act="close">Cancelar</button><button class="btn primary" type="submit">Guardar nota</button></div></div>
+  </form>`);
+}
+let recBusy=false;const recHechos=new Set();
+async function recordatorios(){
+  if(!db||!me.id||!loaded.notas||!loaded.mensajes||recBusy)return;recBusy=true;
+  try{const hoy=today();
+    for(const n of S.notas){
+      if(n.hecho||n.rec==null||n.rec===''||!paraMi(n))continue;
+      const fa=addDias(n.fecha,-(+n.rec||0));if(fa>hoy||n.fecha<addDias(hoy,-3))continue;
+      const id=`rec-${n.id}-${me.id}-${fa}`;if(recHechos.has(id)||byId(S.mensajes,id))continue;recHechos.add(id);
+      const cuando=n.fecha===hoy?'para hoy':n.fecha===addDias(hoy,1)?'para mañana':n.fecha>hoy?'para el '+fdate(n.fecha):'del '+fdate(n.fecha);
+      try{await db.collection('mensajes').doc(id).set({de:n.autor||'',para:me.id,texto:`Recordatorio ${cuando}: ${n.titulo}${n.hora?' · '+n.hora:''}${n.parcelaId?' · '+parName(n.parcelaId):''}`,t:Date.now(),leido:false,tipo:'aviso',notaId:n.id})}catch{}
+    }
+  }finally{recBusy=false}
+}
+setInterval(()=>recordatorios(),10*60*1000);
+
+/* ---------- Avisos y mensajes ---------- */
+const misMsg=()=>S.mensajes.filter(m=>m.para===me.id||m.de===me.id);
+const sinLeer=()=>S.mensajes.filter(m=>m.para===me.id&&!m.leido);
+const hora=t=>new Date(t).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+const cuando=t=>{const d=new Date(t),n=new Date();const dd=Math.round((new Date(n.toDateString())-new Date(d.toDateString()))/864e5);return dd===0?hora(t):dd===1?'ayer':dd<7?d.toLocaleDateString('es-ES',{weekday:'short'}):d.toLocaleDateString('es-ES',{day:'numeric',month:'short'})};
+async function notificar(para,texto,extra={},aMi=false){
+  if(!db||!para||(para===me.id&&!aMi))return;
+  try{await db.collection('mensajes').doc().set({de:me.id||'',para,texto,t:Date.now(),leido:false,tipo:'aviso',...extra})}catch{}
+}
+async function marcarLeidos(ms){for(const m of ms){if(m.leido||m.para!==me.id)continue;const {id,...r}=m;try{await db.collection('mensajes').doc(id).set({...r,leido:true})}catch{}}}
+function avisosNuevos(){
+  const mios=S.mensajes.filter(m=>m.para===me.id);
+  if(!avisosListos){mios.forEach(m=>vistos.add(m.id));avisosListos=true;return}
+  const nuevos=mios.filter(m=>!vistos.has(m.id));nuevos.forEach(m=>vistos.add(m.id));
+  const n=nuevos.filter(m=>!m.leido&&!(openChat&&m.tipo==='msg'&&m.de===openChat));
+  if(!n.length)return;
+  const m=n[n.length-1];toast(m.tipo==='msg'?`Mensaje de ${nameOf(m.de)}: ${m.texto.slice(0,60)}`:m.texto);
+}
+function vAvisos(){
+  const avisos=S.mensajes.filter(m=>m.para===me.id&&m.tipo!=='msg').sort((a,b)=>b.t-a.t);
+  const nA=avisos.filter(m=>!m.leido).length;
+  const conv=new Map();misMsg().filter(m=>m.tipo==='msg').forEach(m=>{const o=m.de===me.id?m.para:m.de;const c=conv.get(o)||{o,ult:null,n:0};if(!c.ult||m.t>c.ult.t)c.ult=m;if(m.para===me.id&&!m.leido)c.n++;conv.set(o,c)});
+  const cs=[...conv.values()].sort((a,b)=>b.ult.t-a.ult.t);const nM=cs.reduce((a,c)=>a+c.n,0);
+  let h=`<div class="bar"><span class="grow"></span><button class="btn primary" data-act="nuevo-msg">+ Nuevo mensaje</button></div>`;
+  const rowA=m=>`<button class="row av ${m.leido?'':'unread'}" style="grid-template-columns:auto minmax(0,1fr) auto" data-act="aviso:${m.id}"><span class="avatar" style="background:${colorOf(m.de)}">${esc(inicial(m.de))}</span><div class="main"><strong>${esc(m.texto)}</strong><span>De ${esc(nameOf(m.de))}</span></div><div class="fig"><span class="hint">${cuando(m.t)}</span></div></button>`;
+  const rowC=c=>`<button class="row ${c.n?'unread':''}" style="grid-template-columns:auto minmax(0,1fr) auto" data-act="chat:${c.o}"><span class="avatar" style="background:${colorOf(c.o)}">${esc(inicial(c.o))}</span><div class="main"><strong>${esc(nameOf(c.o))}</strong><span>${c.ult.de===me.id?'Tú: ':''}${esc(c.ult.texto)}</span></div><div class="fig"><span class="hint">${cuando(c.ult.t)}</span>${c.n?`<div><span class="cnt">${c.n}</span></div>`:''}</div></button>`;
+  h+=`<details class="grp" data-k="av-pedidos" ${op('av-pedidos')}><summary><span class="dot k-info"></span><span class="gt"><strong>Avisos</strong><span>${avisos.length?`${avisos.length} avisos`:'Sin avisos'}</span></span><span class="gm">${nA?`<span class="cnt">${nA} ${nA===1?'nuevo':'nuevos'}</span>`:''}</span></summary><div class="gb">${avisos.length?`<div class="list">${avisos.slice(0,60).map(rowA).join('')}</div>${nA?'<div style="margin-top:10px"><button class="btn small" data-act="leer-avisos">Marcar todo como leído</button></div>':''}`:'<p class="hint">Aquí llegan los avisos que el encargado ha elegido para ti: pedidos, cambios de estado o material que se acaba.</p>'}</div></details>`;
+  h+=`<details class="grp" data-k="av-msgs" ${op('av-msgs')}><summary><span class="dot k-venta"></span><span class="gt"><strong>Mensajes</strong><span>${cs.length?`${cs.length} conversaciones`:'Sin conversaciones'}</span></span><span class="gm">${nM?`<span class="cnt">${nM} ${nM===1?'nuevo':'nuevos'}</span>`:''}</span></summary><div class="gb">${cs.length?`<div class="list">${cs.map(rowC).join('')}</div>`:'<p class="hint">Escribe a cualquier compañero con «Nuevo mensaje».</p>'}</div></details>`;
+  return h;
+}
+function nuevoMsg(){
+  const otros=activos().filter(u=>u.id!==me.id);
+  if(!otros.length){toast('Aún no hay más usuarios. El encargado puede crearlos en Ajustes.');return}
+  openSheet('Nuevo mensaje',`<form class="f" data-form="msg-nuevo"><label>Para<select id="mn-para" name="para" required>${otros.map(u=>`<option value="${u.id}">${esc(u.nombre)}</option>`).join('')}${can('ped_crear')?'<option value="*">Todos los usuarios</option>':''}</select></label>
+  <label>Mensaje<textarea id="mn-texto" name="texto" required maxlength="1000" placeholder="Escribe aquí…"></textarea></label>
+  <div class="acts"><span></span><div class="r"><button type="button" class="btn" data-act="close">Cancelar</button><button class="btn primary" type="submit">Enviar</button></div></div></form>`);
+}
+function chatHTML(o){
+  const ms=S.mensajes.filter(m=>m.tipo==='msg'&&((m.de===me.id&&m.para===o)||(m.de===o&&m.para===me.id))).sort((a,b)=>a.t-b.t);
+  if(!ms.length)return '<p class="hint" style="text-align:center">Todavía no hay mensajes. Escribe el primero.</p>';
+  let dia='';return ms.map(m=>{const d=new Date(m.t).toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'});const sep=d!==dia?`<div class="daysep">${d}</div>`:'';dia=d;
+    return sep+`<div class="bub ${m.de===me.id?'mine':'theirs'}">${esc(m.texto)}<small>${hora(m.t)}${m.de===me.id?(m.leido?' · Leído':' · Enviado'):''}${m.grupo?' · a todos':''}</small></div>`}).join('');
+}
+function abrirChat(o){
+  openSheet('Chat',`<div class="msgs" id="chatMsgs">${chatHTML(o)}</div><form class="compose" data-form="msg" data-para="${o}"><textarea id="ch-texto" name="texto" required maxlength="1000" rows="1" placeholder="Mensaje para ${esc(nameOf(o))}"></textarea><button class="btn primary" type="submit">Enviar</button></form>`);
+  $('#sheetRoot .sheet header h2').textContent=nameOf(o);
+  openChat=o;const box=$('#chatMsgs');box.scrollTop=box.scrollHeight;
+  marcarLeidos(S.mensajes.filter(m=>m.tipo==='msg'&&m.de===o&&m.para===me.id&&!m.leido));
+}
+function refreshChat(){
+  if(!openChat)return;const box=$('#chatMsgs');if(!box){openChat=null;return}
+  const abajo=box.scrollHeight-box.scrollTop-box.clientHeight<40;box.innerHTML=chatHTML(openChat);if(abajo)box.scrollTop=box.scrollHeight;
+  marcarLeidos(S.mensajes.filter(m=>m.tipo==='msg'&&m.de===openChat&&m.para===me.id&&!m.leido));
+}
+async function enviar(para,texto){
+  const t=Date.now();
+  if(para==='*'){const g='g'+t;let n=0;for(const u of activos()){if(u.id===me.id)continue;try{await db.collection('mensajes').doc().set({de:me.id,para:u.id,texto,t,leido:false,tipo:'msg',grupo:g});n++}catch(e){toast(errMsg(e));return false}}toast(`Mensaje enviado a ${n} usuarios`);return true}
+  try{await db.collection('mensajes').doc().set({de:me.id,para,texto,t,leido:false,tipo:'msg'});return true}catch(e){toast(errMsg(e));return false}
+}
+const avisa=(uid,k,texto,extra)=>recibe(byId(S.usuarios,uid),k)?notificar(uid,texto,extra):null;
+const efectoInv=(x,aid)=>!x||x.insumoId!==aid?0:x.tipo==='entrada'?(+x.cantidad||0):x.tipo==='uso'?-(+x.cantidad||0):0;
+async function avisarPoco(a,aid,antes,despues,minAntes){
+  const min=+a.minimo||0;if(!(min>0)||!(despues<min))return;
+  if((+minAntes||0)>0&&antes<+minAntes)return;
+  const texto=`Queda poco ${a.nombre}: ${cant(despues,a.unidad)} (mínimo ${cant(min,a.unidad)})`;
+  for(const d of destinatarios('inv_min'))await notificar(d,texto,{insumoId:aid},true);
+  toast(texto);
+}
+const resumenPed=p=>`${p.num||''} · ${empName(p.empresaId)} · entrega ${fdate(p.entrega)}`;
+
+const VIEWS={resumen:vResumen,pedidos:vPedidos,cosechas:vCosechas,stock:vStock,inventario:vInventario,ventas:vVentas,calendario:vCalendario,avisos:vAvisos,ajustes:vAjustes};
+const ICON={resumen:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',pedidos:'<path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/>',cosechas:'<path d="M12 21c-4 0-7-3-7-7 0-3 2-5 4-6-1-2 0-4 3-5 3 1 4 3 3 5 2 1 4 3 4 6 0 4-3 7-7 7z"/>',stock:'<path d="M3 9l9-5 9 5v11H3z"/><path d="M8 20v-6h8v6"/>',ventas:'<path d="M3 7h13l5 5-5 5H3z"/><circle cx="8" cy="12" r="1.5"/>',ajustes:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/>'};
+const LABEL={resumen:'Resumen',pedidos:'Pedidos',cosechas:'Cosechas',stock:'Stock',ventas:'Ventas',avisos:'Avisos',ajustes:'Ajustes',inventario:'Inventario',calendario:'Calendario'};
+ICON.inventario='<path d="M3 8l9-5 9 5v8l-9 5-9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/>';
+ICON.calendario='<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>';
+ICON.avisos='<path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/>';
+const tabs=()=>[can('resumen')&&'resumen',(can('pedidos')||can('ped_todos')||can('ped_crear'))&&'pedidos',can('cos_ver')&&'cosechas',can('stock')&&!can('resumen')&&'stock',can('inv_ver')&&'inventario',can('ventas')&&'ventas',can('cal_ver')&&'calendario','avisos',(can('empresas')||can('config')||can('exportar')||can('usuarios'))&&'ajustes'].filter(Boolean);
+function render(){
+  const nav=$('nav.tabs'),main=$('#main');
+  $('#sub').textContent=S.cfg.nombre||'Producción y ventas';
+  banner();
+  if(!loaded.usuarios){nav.hidden=true;$('#gearBtn').hidden=true;$('#stockBox').hidden=true;$('#meBtn').hidden=true;if(status!=='sin'&&status!=='error')main.innerHTML='<p class="hint" style="text-align:center;margin-top:40px">Cargando…</p>';else main.innerHTML='';return}
+  if(me.id&&!meUser()){me={id:null};sesSet(null);closeSheet()}
+  if(!me.id){
+    nav.hidden=true;$('#gearBtn').hidden=true;$('#stockBox').hidden=true;$('#meBtn').hidden=true;
+    const mode=S.usuarios.length?'login':'setup',cur=main.querySelector('.login');
+    if(!cur||cur.dataset.screen!==mode||cur.dataset.err!==loginErr){main.innerHTML=vLogin();main.querySelector('.login').dataset.err=loginErr}
+    return;
+  }
+  nav.hidden=false;$('#stockBox').hidden=false;const mb=$('#meBtn');mb.hidden=false;mb.textContent=inicial(me.id);mb.style.background=colorOf(me.id);mb.title=nameOf(me.id);
+  const T=tabs();if(!T.includes(tab))tab=T[0];
+  const nL=sinLeer().length,NT=T.filter(t=>t!=='ajustes');$('#navIn').classList.toggle('many',NT.length>=7);
+  const gb=$('#gearBtn');gb.hidden=!T.includes('ajustes');gb.setAttribute('aria-current',tab==='ajustes'?'page':'false');
+  $('#navIn').innerHTML=NT.map(t=>{const n=t==='pedidos'?S.pedidos.filter(p=>abierto(p)&&(can('ped_todos')||can('ped_crear')||p.asignado===me.id)).length:t==='avisos'?nL:0;return `<button data-act="tab:${t}" aria-current="${t===tab?'page':'false'}" aria-label="${LABEL[t]}${n?`, ${n}`:''}"><svg viewBox="0 0 24 24">${ICON[t]}</svg>${LABEL[t]}${n?`<span class="badge ${t==='pedidos'?'soft':''}">${n>99?'99+':n}</span>`:''}</button>`}).join('');
+  try{document.title=(nL?`(${nL}) `:'')+'Cuaderno de Finca'}catch{}
+  try{const cur=$('#navIn [aria-current="page"]'),box=$('#navIn');if(cur&&box.scrollWidth>box.clientWidth)box.scrollLeft=cur.offsetLeft-(box.clientWidth-cur.offsetWidth)/2}catch{}
+  main.innerHTML=VIEWS[tab]();
+  $('#stockTop').textContent=kg(stockTotal());
+}
+function banner(){
+  const bn=$('#banner');
+  if(status==='sin'){bn.hidden=false;bn.textContent='No se pueden cargar los datos aquí. Abre la app desde claude.ai con tu cuenta para ver y guardar la información compartida.'}
+  else if(status==='error'){bn.hidden=false;bn.textContent='Se perdió la conexión con los datos. Recarga la página.'}
+  else if(status==='demo'){bn.hidden=false;bn.innerHTML=`<b>Modo prueba.</b> Datos inventados; lo que cambies se pierde al cerrar. Entra como <b>ana</b> (encargada), <b>juan</b> o <b>maria</b> (acceso personalizado), todos con clave <b>1234</b>.`}
+  else bn.hidden=true;
+}
+
+/* ---------- Hojas ---------- */
+function openSheet(title,body){
+  if(!title.startsWith('Pedido '))openPed=null;
+  openChat=null;
+  $('#sheetRoot').innerHTML=`<div class="scrim" data-scrim><div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(title)}"><header><h2>${esc(title)}</h2><button class="x" data-act="close" aria-label="Cerrar">×</button></header>${body}</div></div>`;
+  const first=$('#sheetRoot input:not([type=hidden]),#sheetRoot select');if(first&&matchMedia('(min-width:700px)').matches)first.focus();
+}
+const closeSheet=()=>{$('#sheetRoot').innerHTML='';openPed=null;openChat=null};
+const delBtn=(col,id)=>id?`<button type="button" class="btn danger small" data-act="del:${col}:${id}">Borrar</button>`:'<span></span>';
+const prodOpts=sel=>prods().map(p=>`<option value="${p.id}" ${p.id===sel?'selected':''}>${esc(p.nombre)}</option>`).join('');
+const calOpts=(sel,pid)=>cal(pid).map(c=>`<option ${c===sel?'selected':''}>${esc(c)}</option>`).join('');
+
+function formCosecha(x={}){
+  const pid=x.id?pidOf(x):(F.producto||prods()[0].id);
+  openSheet(x.id?'Editar cosecha':'Anotar cosecha',`<form class="f" data-form="cosecha" data-id="${x.id||''}">
+    <label>Producto<select id="c-prod" name="productoId">${prodOpts(pid)}</select></label>
+    <div class="two"><label>Fecha<input type="date" id="c-fecha" name="fecha" required value="${esc(x.fecha||today())}"></label><label>Kilos<input id="c-kg" name="kg" required inputmode="decimal" placeholder="0" value="${show(x.kg)}"></label></div>
+    <div class="two"><label>Parcela<select id="c-par" name="parcelaId"><option value="">Sin parcela</option>${S.parcelas.map(p=>`<option value="${p.id}" ${x.parcelaId===p.id?'selected':''}>${esc(p.nombre)}</option>`).join('')}</select></label><label>Calidad<select id="c-cal" name="calidad">${calOpts(x.calidad,pid)}</select></label></div>
+    <label>Nota<input id="c-nota" name="nota" value="${esc(x.nota)}" placeholder="Opcional: cajas, quién recogió…"></label>
+    <div class="acts">${delBtn('cosechas',x.id)}<div class="r"><button type="button" class="btn" data-act="close">Cancelar</button><button class="btn leaf" type="submit">Guardar</button></div></div>
+  </form>`);
+}
+
+function lineHTML(l={}){const pid=l.productoId||F.producto||prods()[0].id;return `<div class="line"><select name="l-prod" aria-label="Producto">${prodOpts(pid)}</select><select name="l-cal" aria-label="Calidad">${calOpts(l.calidad,pid)}</select><input name="l-kg" inputmode="decimal" placeholder="kg" aria-label="Kilos" value="${show(l.kg)}"><input name="l-pr" inputmode="decimal" placeholder="€/kg" aria-label="Precio por kilo" value="${show(l.precio)}"><button type="button" class="x" data-act="rm-line" aria-label="Quitar línea">×</button></div>`}
+function formVenta(v={}){
+  if(!S.empresas.length){toast('Primero añade una empresa compradora.');formEmpresa();return}
+  const lines=(v.lineas&&v.lineas.length?v.lineas.map(l=>({...l,productoId:pidOf(l)})):[{}]);
+  openSheet(v.id?`Editar venta ${v.num||''}`:'Nueva venta',`<form class="f" data-form="venta" data-id="${v.id||''}">
+    <div class="two"><label>Fecha<input type="date" id="v-fecha" name="fecha" required value="${esc(v.fecha||today())}"></label><label>Empresa<select id="v-emp" name="empresaId" required>${S.empresas.map(e=>`<option value="${e.id}" ${v.empresaId===e.id?'selected':''}>${esc(e.nombre)}</option>`).join('')}</select></label></div>
+    <div><div class="lines" id="lines">${lines.map(lineHTML).join('')}</div>
+    <button type="button" class="btn small" style="margin-top:8px" data-act="add-line">+ Otra línea</button></div>
+    <div class="total"><span class="num" id="v-kgt">0 kg</span><b class="num" id="v-tot">0 €</b></div>
+    <label class="check"><input type="checkbox" id="v-cob" name="cobrado" ${v.cobrado?'checked':''}> Ya está cobrado</label>
+    <label>Nota<input id="v-nota" name="nota" value="${esc(v.nota)}" placeholder="Opcional: matrícula, cajas, nº pedido…"></label>
+    <div class="acts">${delBtn('ventas',v.id)}<div class="r"><button type="button" class="btn" data-act="close">Cancelar</button><button class="btn primary" type="submit">Guardar venta</button></div></div>
+  </form>`);
+  recalc();
+}
+function readLines(){return [...document.querySelectorAll('#lines .line')].map(r=>({productoId:r.querySelector('[name=l-prod]').value,calidad:r.querySelector('[name=l-cal]').value,kg:num(r.querySelector('[name=l-kg]').value),precio:num(r.querySelector('[name=l-pr]').value)}))}
+function recalc(){const ls=readLines();const k=ls.reduce((a,l)=>a+l.kg,0),t=ls.reduce((a,l)=>a+l.kg*l.precio,0);const a=$('#v-kgt'),b=$('#v-tot');if(a)a.textContent=kg(k);if(b)b.textContent=eur(t)}
+function fillPrices(){const emp=$('#v-emp')?.value;document.querySelectorAll('#lines .line').forEach(r=>{const p=r.querySelector('[name=l-pr]');if(!p.value){const lp=lastPrice(emp,r.querySelector('[name=l-prod]').value,r.querySelector('[name=l-cal]').value);if(lp)p.value=show(lp)}});recalc()}
+
+function detVenta(v){
+  const e=byId(S.empresas,v.empresaId)||{};
+  openSheet(`Albarán ${v.num||''}`,`<dl class="kv"><dt>Fecha</dt><dd>${fdate(v.fecha)}</dd><dt>Empresa</dt><dd>${esc(e.nombre||'Empresa borrada')}</dd>${e.cif?`<dt>CIF</dt><dd>${esc(e.cif)}</dd>`:''}<dt>Estado</dt><dd>${v.cobrado?'<span class="pill ok">Cobrado</span>':'<span class="pill warn">Pendiente de cobro</span>'}</dd>${v.nota?`<dt>Nota</dt><dd>${esc(v.nota)}</dd>`:''}</dl>
+  <div class="tscroll" style="margin-top:12px"><table class="table"><thead><tr><th>Producto</th><th>Kg</th><th>€/kg</th><th>Importe</th></tr></thead><tbody>${(v.lineas||[]).map(l=>`<tr><td>${esc(prodName(pidOf(l)))} · ${esc(l.calidad)}</td><td>${kg(l.kg)}</td><td>${eur(l.precio)}</td><td>${eur(l.kg*l.precio)}</td></tr>`).join('')}<tr><td class="strong">Total</td><td class="strong">${kg(vKg(v,''))}</td><td></td><td class="strong">${eur(vTot(v,''))}</td></tr></tbody></table></div>
+  <div class="acts" style="margin-top:14px">${can('ventas_editar')?`<button class="btn" data-act="edit-venta:${v.id}">Editar</button>`:'<span></span>'}<div class="r"><button class="btn" data-act="albaran:${v.id}">Albarán PDF</button>${can('ventas_editar')?`<button class="btn ${v.cobrado?'':'primary'}" data-act="cobrar:${v.id}">${v.cobrado?'Marcar pendiente':'Marcar cobrado'}</button>`:''}</div></div>`);
+}
+
+function formEmpresa(e={}){
+  openSheet(e.id?'Editar empresa':'Nueva empresa',`<form class="f" data-form="empresa" data-id="${e.id||''}">
+    <label>Nombre<input id="e-nombre" name="nombre" required value="${esc(e.nombre)}" placeholder="Ej. Frutas del Sur S.L."></label>
+    <div class="two"><label>CIF<input id="e-cif" name="cif" value="${esc(e.cif)}"></label><label>Teléfono<input id="e-tel" name="telefono" inputmode="tel" value="${esc(e.telefono)}"></label></div>
+    <label>Dirección<input id="e-dir" name="direccion" value="${esc(e.direccion)}"></label>
+    <label>Notas<textarea id="e-nota" name="nota" placeholder="Contacto, forma de pago…">${esc(e.nota)}</textarea></label>
+    <div class="acts">${delBtn('empresas',e.id)}<div class="r"><button type="button" class="btn" data-act="close">Cancelar</button><button class="btn primary" type="submit">Guardar</button></div></div>
+  </form>`);
+}
+function formProducto(p={}){
+  const nuevo=!p.id||(p===DEF_PROD&&!byId(S.productos,'pitahaya'));
+  openSheet(nuevo&&p!==DEF_PROD?'Nuevo producto':'Editar producto',`<form class="f" data-form="producto" data-id="${p.id||''}">
+    <label>Nombre<input id="pr-nombre" name="nombre" required value="${esc(p.nombre)}" placeholder="Ej. Aguacate, Mango, Chirimoya"></label>
+    <label>Calidades (separadas por comas)<input id="pr-cal" name="calidades" value="${esc((p.calidades||DEF_CAL).join(', '))}"></label>
+    <p class="hint">El stock y los precios se llevan por producto y calidad. Si no separas calidades, escribe solo una, por ejemplo «Única».</p>
+    <div class="acts">${p.id&&byId(S.productos,p.id)?delBtn('productos',p.id):'<span></span>'}<div class="r"><button type="button" class="btn" data-act="close">Cancelar</button><button class="btn primary" type="submit">Guardar</button></div></div>
+  </form>`);
+}
+function formParcela(p={}){
+  openSheet(p.id?'Editar parcela':'Nueva parcela',`<form class="f" data-form="parcela" data-id="${p.id||''}">
+    <label>Nombre<input id="p-nombre" name="nombre" required value="${esc(p.nombre)}" placeholder="Ej. Invernadero 1, Bancal de arriba"></label>
+    <div class="two"><label>Superficie<input id="p-sup" name="superficie" value="${esc(p.superficie)}" placeholder="Ej. 2.500 m²"></label><label>Plantas<input id="p-pl" name="plantas" inputmode="numeric" value="${esc(p.plantas)}"></label></div>
+    <label>Nota<input id="p-nota" name="nota" value="${esc(p.nota)}" placeholder="Variedad, riego…"></label>
+    <div class="acts">${delBtn('parcelas',p.id)}<div class="r"><button type="button" class="btn" data-act="close">Cancelar</button><button class="btn primary" type="submit">Guardar</button></div></div>
+  </form>`);
+}
+
+/* ---------- Descargas ---------- */
+const libs={};
+function loadLib(k,src){return libs[k]||(libs[k]=new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=()=>{delete libs[k];rej(new Error('lib'))};document.head.appendChild(s)}))}
+async function saveFile(filename,data){
+  const dl=window.claude?.use?await window.claude.use('downloads'):null;
+  if(!dl){try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data]));a.download=filename;document.body.appendChild(a);a.click();a.remove();toast('Descargado: '+filename)}catch{toast('Las descargas no están disponibles en esta vista.')}return}
+  try{await dl.save({filename,data});toast('Archivo listo: '+filename)}
+  catch(e){if(e?.code!=='declined')toast('No se pudo descargar el archivo.')}
+}
+async function albaranPDF(v){
+  try{await loadLib('pdf','https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js')}catch{toast('No se pudo cargar el generador de PDF.');return}
+  const {jsPDF}=window.jspdf, d=new jsPDF({unit:'mm',format:'a4'}), c=S.cfg, e=byId(S.empresas,v.empresaId)||{};
+  const E=n=>n.toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2})+' EUR';
+  const K=n=>n.toLocaleString('es-ES',{maximumFractionDigits:2})+' kg';
+  d.setFillColor(184,24,90);d.rect(0,0,210,6,'F');
+  d.setFont('helvetica','bold');d.setFontSize(20);d.text('ALBARÁN DE ENTREGA',15,22);
+  d.setFontSize(11);d.setFont('helvetica','normal');d.text(`Nº ${v.num||''}`,195,17,{align:'right'});d.text(`Fecha: ${fdate(v.fecha)}`,195,23,{align:'right'});
+  const box=(x,title,lines)=>{d.setFont('helvetica','bold');d.setFontSize(9);d.setTextColor(110);d.text(title,x,36);d.setTextColor(20);d.setFontSize(11);lines.filter(Boolean).forEach((t,i)=>{d.setFont('helvetica',i?'normal':'bold');d.text(String(t),x,42+i*5.5,{maxWidth:85})})};
+  box(15,'EMISOR',[c.nombre||'—',c.nif&&'NIF: '+c.nif,c.direccion,c.telefono&&'Tel: '+c.telefono]);
+  box(110,'CLIENTE',[e.nombre||'—',e.cif&&'CIF: '+e.cif,e.direccion,e.telefono&&'Tel: '+e.telefono]);
+  let y=72;d.setFillColor(234,238,228);d.rect(15,y-5,180,8,'F');d.setFont('helvetica','bold');d.setFontSize(10);
+  d.text('Producto',18,y);d.text('Calidad',70,y);d.text('Kilos',125,y,{align:'right'});d.text('Precio/kg',158,y,{align:'right'});d.text('Importe',192,y,{align:'right'});
+  d.setFont('helvetica','normal');y+=9;
+  (v.lineas||[]).forEach(l=>{d.text(prodName(pidOf(l)),18,y,{maxWidth:50});d.text(String(l.calidad||''),70,y);d.text(K(+l.kg||0),125,y,{align:'right'});d.text(E(+l.precio||0),158,y,{align:'right'});d.text(E((+l.kg||0)*(+l.precio||0)),192,y,{align:'right'});y+=7});
+  d.setDrawColor(200);d.line(15,y-3,195,y-3);y+=4;d.setFont('helvetica','bold');
+  d.text('Total',18,y);d.text(K(vKg(v,'')),125,y,{align:'right'});d.text(E(vTot(v,'')),192,y,{align:'right'});
+  y+=6;d.setFont('helvetica','normal');d.setFontSize(8.5);d.setTextColor(110);d.text('Importes sin impuestos.',15,y);d.setTextColor(20);
+  if(v.nota){y+=8;d.setFontSize(10);d.text('Observaciones: '+v.nota,15,y,{maxWidth:180})}
+  y=Math.max(y+22,200);d.setFontSize(10);d.rect(15,y,85,32);d.rect(110,y,85,32);d.text('Entregado (firma)',18,y+6);d.text('Recibí conforme (firma y sello)',113,y+6);
+  await saveFile(`Albaran_${v.num||v.fecha}.pdf`,d.output('arraybuffer'));
+}
+async function exportXLSX(){
+  try{await loadLib('xlsx','https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js')}catch{toast('No se pudo cargar el generador de Excel.');return}
+  const X=window.XLSX, wb=X.utils.book_new(), add=(n,rows)=>X.utils.book_append_sheet(wb,X.utils.json_to_sheet(rows),n);
+  add('Cosechas',sortDesc(S.cosechas).map(x=>({Fecha:x.fecha,Producto:prodName(pidOf(x)),Parcela:parName(x.parcelaId),Calidad:x.calidad,Kg:+x.kg||0,Nota:x.nota||''})));
+  const vr=[];sortDesc(S.ventas).forEach(v=>(v.lineas||[]).forEach(l=>vr.push({Albarán:v.num||'',Fecha:v.fecha,Empresa:empName(v.empresaId),CIF:byId(S.empresas,v.empresaId)?.cif||'',Producto:prodName(pidOf(l)),Calidad:l.calidad,Kg:+l.kg||0,'€/kg':+l.precio||0,Importe:Math.round((+l.kg||0)*(+l.precio||0)*100)/100,Cobrado:v.cobrado?'Sí':'No'})));
+  add('Ventas',vr);
+  add('Empresas',S.empresas.map(e=>{const vs=S.ventas.filter(v=>v.empresaId===e.id);return {Empresa:e.nombre,CIF:e.cif||'',Dirección:e.direccion||'',Teléfono:e.telefono||'','Kg comprados':vs.reduce((a,v)=>a+vKg(v,''),0),Facturado:Math.round(vs.reduce((a,v)=>a+vTot(v,''),0)*100)/100,Pendiente:Math.round(vs.filter(v=>!v.cobrado).reduce((a,v)=>a+vTot(v,''),0)*100)/100}}));
+  if(can('cal_ver'))add('Calendario',notasVis().slice().sort(ordenNotas).map(n=>({Día:n.fecha,Hora:n.hora||'',Tipo:n.tipo||'',Título:n.titulo,Campo:n.parcelaId?parName(n.parcelaId):'',Detalles:n.texto||'','Avisa a':avisadosTxt(n),Hecha:n.hecho?'Sí':'No','Apuntada por':nameOf(n.autor)})));
+  if(can('inv_ver')){const im=invStock();const rowsI=[];S.insumos.forEach(a=>locs().forEach(l=>{const q=stockEn(im,a.id,l.id);if(q)rowsI.push({Material:a.nombre,Tipo:a.categoria||'',Campo:l.nombre,Cantidad:Math.round(q*100)/100,Unidad:a.unidad||''})}));
+    add('Inventario campos',rowsI);
+    add('Movimientos inventario',sortDesc(S.movimientos).map(x=>({Fecha:x.fecha,Movimiento:TIPO[x.tipo]?.[0]||x.tipo,Material:insumo(x.insumoId)?.nombre||'',Campo:locName(x.parcelaId),Destino:x.tipo==='traslado'?locName(x.destinoId):'',Cantidad:+x.cantidad||0,Unidad:insumo(x.insumoId)?.unidad||'',Nota:x.nota||''})))}
+  add('Stock',stockPorCalidad('').map(x=>({Producto:prodName(x.p),Calidad:x.c,'Kg cosechados':x.co,'Kg vendidos':x.v,'Kg disponibles':x.co-x.v})));
+  await saveFile(`Produccion_${today()}.xlsx`,new Uint8Array(X.write(wb,{type:'array',bookType:'xlsx'})));
+}
+
+/* ---------- Eventos ---------- */
+document.addEventListener('click',async ev=>{
+  if(ev.target.matches('[data-scrim]')){closeSheet();return}
+  const b=ev.target.closest('[data-act]');if(!b)return;
+  const [act,a1,a2]=b.dataset.act.split(':');
+  const falta=act==='del'?NEED_DEL[a1]:NEED[act];
+  if(falta&&!can(falta)){toast('No tienes permiso para esto. Pídeselo al encargado.');return}
+  switch(act){
+    case 'tab':tab=a1;F.parcela=F.empresa=F.estado='';F.ped='';if(a1==='resumen'&&'_prodRes' in F){F.producto=F._prodRes;delete F._prodRes}closeSheet();render();scrollTo(0,0);try{history.replaceState(null,'','#'+a1)}catch{}break;
+    case 'close':closeSheet();break;
+    case 'perfil':perfil();break;
+    case 'nuevo-msg':nuevoMsg();break;
+    case 'chat':abrirChat(a1);break;
+    case 'aviso':{const m=byId(S.mensajes,a1);if(!m)break;marcarLeidos([m]);if(m.notaId){const n=byId(S.notas,m.notaId);if(!n){toast('Esa nota ya no existe.');break}if(can('cal_ver')){F.calMes=n.fecha.slice(0,7);F.calDia=n.fecha;tab='calendario';render()}detNota(n);break}if(m.insumoId){if(!can('inv_ver')){toast('No tienes acceso al inventario.');break}if(!insumo(m.insumoId)){toast('Ese material ya no existe.');break}tab='inventario';F.gi='articulo';OPEN['i-a-'+m.insumoId]=true;render();scrollTo(0,0);break}
+      const p=m.pedidoId&&byId(S.pedidos,m.pedidoId);if(p)detPedido(p);else toast('Ese pedido ya no existe.');break}
+    case 'leer-avisos':marcarLeidos(S.mensajes.filter(m=>m.para===me.id&&m.tipo!=='msg'&&!m.leido)).then(()=>toast('Avisos marcados como leídos'));break;
+    case 'salir':salir();break;
+    case 'add-usuario':formUsuario();break;
+    case 'edit-usuario':formUsuario(byId(S.usuarios,a1));break;
+    case 'grp':F[a1]=a2;render();break;
+    case 'cal-dia':F.calDia=a1;render();break;
+    case 'cal-mes':{const [yy,mm]=F.calMes.split('-').map(Number),d=new Date(yy,mm-1+(+a1),1);F.calMes=isoD(d).slice(0,7);F.calDia=F.calMes===today().slice(0,7)?today():F.calMes+'-01';render();break}
+    case 'cal-hoy':F.calMes=today().slice(0,7);F.calDia=today();render();break;
+    case 'add-nota':formNota({},a1||F.calDia);break;
+    case 'nota':detNota(byId(S.notas,a1));break;
+    case 'edit-nota':{const n=byId(S.notas,a1);if(n&&(n.autor===me.id||isAdmin()))formNota(n);else toast('Solo puede cambiarla quien la apuntó o un encargado.');break}
+    case 'nota-hecha':{const n=byId(S.notas,a1);if(!n)break;const {id,...r}=n;const hecho=!n.hecho;if(await put('notas',id,{...r,hecho,hechoPor:hecho?me.id:''})){toast(hecho?'Nota marcada como hecha':'Nota marcada como no hecha');detNota({...n,hecho,hechoPor:hecho?me.id:''});if(hecho&&n.autor&&n.autor!==me.id)await notificar(n.autor,`${nameOf(me.id)} ha marcado como hecha: ${n.titulo} · ${fdate(n.fecha)}`,{notaId:id})}break}
+    case 'go-stock':{const T=tabs();if(T.includes('stock'))tab='stock';else if(T.includes('resumen')){tab='resumen';OPEN['s-stock-en-almacen']=true}else break;closeSheet();render();const d=$('details[data-k="s-stock-en-almacen"]');if(d)d.scrollIntoView({block:'start'});else scrollTo(0,0);break}
+    case 'go':{
+      if(!tabs().includes(a1)){toast('No tienes acceso a esa página.');break}
+      const raw=b.dataset.act.slice(('go:'+a1+':').length),P={};raw.split(';').forEach(kv=>{const i=kv.indexOf('=');if(i>0)P[kv.slice(0,i)]=kv.slice(i+1)});
+      F.parcela=F.empresa=F.estado=F.ped='';
+      if('producto' in P&&P.producto!==F.producto&&tab==='resumen')F._prodRes=F.producto;
+      ['producto','parcela','empresa','estado','ped','gc','gv','gi','yr'].forEach(k=>{if(k in P)F[k]=P[k]});
+      if(P.open&&P.open[0]!=='*')OPEN[P.open]=true;
+      tab=a1;closeSheet();render();
+      if(P.open==='*first'||P.open==='*all'){const ds=[...document.querySelectorAll('#main details.grp')];(P.open==='*all'?ds:ds.slice(0,1)).forEach(d=>{d.open=true;OPEN[d.dataset.k]=true})}
+      const tgt=P.open&&P.open[0]!=='*'?[...document.querySelectorAll('#main details.grp')].find(d=>d.dataset.k===P.open):null;
+      if(tgt)tgt.scrollIntoView({block:'start'});else scrollTo(0,0);
+      try{history.replaceState(null,'','#'+a1)}catch{}
+      break}
+    case 'add-mov':{const [ai,li]=(a2||'').split('~');formMov({},{tipo:a1||'entrada',insumoId:ai||undefined,loc:li===undefined?undefined:(li==='_'?'':li)});break}
+    case 'edit-mov':formMov(byId(S.movimientos,a1));break;
+    case 'add-insumo':formInsumo();break;
+    case 'edit-insumo':formInsumo(insumo(a1));break;
+    case 'inv':detInv(a1,a2==='_'?'':a2);break;
+    case 'add-cosecha':formCosecha();break;
+    case 'edit-cosecha':formCosecha(byId(S.cosechas,a1));break;
+    case 'add-venta':formVenta();fillPrices();break;
+    case 'venta':detVenta(byId(S.ventas,a1));break;
+    case 'edit-venta':formVenta(byId(S.ventas,a1));break;
+    case 'add-empresa':formEmpresa();break;
+    case 'edit-empresa':formEmpresa(byId(S.empresas,a1));break;
+    case 'add-parcela':formParcela();break;
+    case 'add-producto':formProducto();break;
+    case 'add-pedido':formPedido();fillPrices();break;
+    case 'pedido':detPedido(byId(S.pedidos,a1));break;
+    case 'edit-pedido':formPedido(byId(S.pedidos,a1));break;
+    case 'asignarme':{const p=byId(S.pedidos,a1);if(p&&await savePedido(p,{asignado:me.id}))toast('Pedido asignado a ti');break}
+    case 'estado':{const p=byId(S.pedidos,a1);if(p&&await savePedido(p,{lineas:leerKg(p)},a2))toast(EST[a2][0]);break}
+    case 'guardar-kg':{const p=byId(S.pedidos,a1);if(p&&await savePedido(p,{lineas:leerKg(p)}))toast('Kilos guardados');break}
+    case 'entregar':{const p=byId(S.pedidos,a1);if(p){b.disabled=true;await entregar(p);b.disabled=false}break}
+    case 'cancel-pedido':{const p=byId(S.pedidos,a1);if(!p)break;if(!armed['c'+a1]){armed['c'+a1]=1;b.classList.add('armed');b.textContent='Toca otra vez para cancelar';setTimeout(()=>{delete armed['c'+a1];if(b.isConnected){b.classList.remove('armed');b.textContent='Cancelar pedido'}},3500);break}delete armed['c'+a1];if(await savePedido(p,{},'cancelado'))toast('Pedido cancelado');break}
+    case 'edit-producto':formProducto(prod(a1));break;
+    case 'edit-parcela':formParcela(byId(S.parcelas,a1));break;
+    case 'add-line':{const ls=readLines(),last=ls[ls.length-1]||{},c=cal(last.productoId),i=c.indexOf(last.calidad);$('#lines').insertAdjacentHTML('beforeend',lineHTML({productoId:last.productoId,calidad:c[Math.min(i+1,c.length-1)]}));fillPrices();break}
+    case 'rm-line':if(document.querySelectorAll('#lines .line').length>1){b.closest('.line').remove();recalc()}break;
+    case 'cobrar':{const v=byId(S.ventas,a1);if(!v)break;const {id,...rest}=v;if(await put('ventas',id,{...rest,cobrado:!v.cobrado})){toast(v.cobrado?'Marcada como pendiente':'Marcada como cobrada');detVenta({...v,cobrado:!v.cobrado})}break}
+    case 'albaran':{const v=byId(S.ventas,a1);if(v)albaranPDF(v);break}
+    case 'export':exportXLSX();break;
+    case 'del':{
+      const key=a1+a2;
+      if(a1==='notas'){const n=byId(S.notas,a2);if(n&&n.autor!==me.id&&!isAdmin()){toast('Solo puede borrarla quien la apuntó o un encargado.');break}}
+      if(a1==='insumos'&&S.movimientos.some(x=>x.insumoId===a2)){toast('Este material tiene movimientos. Borra antes sus movimientos.');break}
+      if(a1==='empresas'&&S.ventas.some(v=>v.empresaId===a2)){toast('Esta empresa tiene ventas. Borra antes sus ventas.');break}
+      if(a1==='productos'&&(S.cosechas.some(x=>pidOf(x)===a2)||S.ventas.some(v=>(v.lineas||[]).some(l=>pidOf(l)===a2)))){toast('Este producto tiene cosechas o ventas. No se puede borrar.');break}
+      if(!armed[key]){armed[key]=1;b.classList.add('armed');b.textContent='Toca otra vez para borrar';setTimeout(()=>{delete armed[key];if(b.isConnected){b.classList.remove('armed');b.textContent='Borrar'}},3500);break}
+      delete armed[key];
+      const mvDel=a1==='movimientos'?byId(S.movimientos,a2):null,antesDel=mvDel?totalDe(invStock(),mvDel.insumoId):0;
+      if(await del(a1,a2)){closeSheet();toast('Borrado');if(mvDel){const a=insumo(mvDel.insumoId);if(a)await avisarPoco(a,a.id,antesDel,antesDel-efectoInv(mvDel,mvDel.insumoId),a.minimo)}}break}
+  }
+});
+document.addEventListener('change',ev=>{
+  const t=ev.target;
+  if(t.id==='f-yr'){F.yr=t.value;render()}
+  else if(t.id==='f-prod'){F.producto=t.value;render()}
+  else if(t.id==='f-ped'){F.ped=t.value;render()}
+  else if(t.id==='na-todos'){document.querySelectorAll('#sheetRoot [name^="na-"]').forEach(i=>{if(i!==t){i.disabled=t.checked;if(t.checked)i.checked=false}})}
+  else if(['mv-tipo','mv-art','mv-loc'].includes(t.id)){movUI();if(t.id==='mv-tipo')$('#sheetRoot .sheet header h2').textContent=TIPO[t.value][0]}
+  else if(t.id==='u-rol'){const adm=t.value==='admin';document.querySelectorAll('#u-perms input').forEach(i=>{const k=i.name.slice(3);i.disabled=adm;if(adm)i.checked=true})}
+  else if(t.name&&t.name.startsWith('pm-')){
+    const k=t.name.slice(3),box=x=>$('#pm-'+x);
+    if(t.checked&&IMPLICA[k])box(IMPLICA[k]).checked=true;
+    if(!t.checked)Object.entries(IMPLICA).forEach(([a,b])=>{if(b===k)box(a).checked=false});
+    
+  }
+  else if(t.id==='c-prod'){$('#c-cal').innerHTML=calOpts('',t.value)}
+  else if(t.name==='l-prod'){const r=t.closest('.line');r.querySelector('[name=l-cal]').innerHTML=calOpts('',t.value);r.querySelector('[name=l-pr]').value='';fillPrices()}
+  else if(t.id==='f-parcela'){F.parcela=t.value;render()}
+  else if(t.id==='f-estado'){F.estado=t.value;render()}
+  else if(t.id==='f-empresa'){F.empresa=t.value;render()}
+  else if(t.id==='v-emp'||t.name==='l-cal'){fillPrices()}
+});
+document.addEventListener('toggle',ev=>{const d=ev.target;if(d&&d.matches&&d.matches('details.grp'))OPEN[d.dataset.k]=d.open},true);
+document.addEventListener('input',ev=>{if(ev.target.closest('#lines'))recalc()});
+document.addEventListener('keydown',ev=>{const t=ev.target;if((ev.key==='Enter'||ev.key===' ')&&t.matches&&t.matches('[data-act][tabindex]:not(button)')){ev.preventDefault();t.click()}});
+document.addEventListener('keydown',ev=>{if(ev.target.id==='ch-texto'&&ev.key==='Enter'&&!ev.shiftKey&&matchMedia('(pointer:fine)').matches){ev.preventDefault();ev.target.form.requestSubmit()}});
+document.addEventListener('keydown',ev=>{if(ev.key==='Escape'&&$('#sheetRoot').innerHTML)closeSheet()});
+document.addEventListener('submit',async ev=>{
+  ev.preventDefault();if(NEED_FORM[ev.target.dataset.form]&&!can(NEED_FORM[ev.target.dataset.form])){toast('No tienes permiso para esto. Pídeselo al encargado.');return}
+  const f=ev.target,kind=f.dataset.form,id=f.dataset.id||null,fd=new FormData(f),g=k=>String(fd.get(k)||'').trim();
+  const btn=f.querySelector('[type=submit]');if(btn)btn.disabled=true;
+  let ok=false;
+  const prev=id?(byId(S[{cosecha:'cosechas',venta:'ventas',empresa:'empresas',parcela:'parcelas',producto:'productos',pedido:'pedidos',usuario:'usuarios',mov:'movimientos',insumo:'insumos',nota:'notas'}[kind]]||[],id)||{}):{};
+  if(kind==='cosecha'){
+    const k=num(g('kg'));if(k<=0){toast('Indica los kilos.');if(btn)btn.disabled=false;return}
+    ok=await put('cosechas',id,{fecha:g('fecha'),kg:k,productoId:g('productoId'),parcelaId:g('parcelaId'),calidad:g('calidad'),nota:g('nota'),creado:prev.creado||Date.now()});
+    if(ok)toast(`Cosecha guardada: ${kg(k)}`);
+  }else if(kind==='venta'){
+    const lineas=readLines().filter(l=>l.kg>0);
+    if(!lineas.length){toast('Añade al menos una línea con kilos.');if(btn)btn.disabled=false;return}
+    const fecha=g('fecha');
+    ok=await put('ventas',id,{fecha,empresaId:g('empresaId'),lineas,total:Math.round(lineas.reduce((a,l)=>a+l.kg*l.precio,0)*100)/100,cobrado:fd.get('cobrado')==='on',nota:g('nota'),num:prev.num||nextNum(fecha),creado:prev.creado||Date.now()});
+    if(ok)toast('Venta guardada');
+  }else if(kind==='empresa'){
+    ok=await put('empresas',id,{nombre:g('nombre'),cif:g('cif'),telefono:g('telefono'),direccion:g('direccion'),nota:g('nota'),creado:prev.creado||Date.now()});
+    if(ok)toast('Empresa guardada');
+  }else if(kind==='pedido'){
+    const lineas=readLines().filter(l=>l.kg>0);
+    if(!lineas.length){toast('Añade al menos una línea con kilos.');if(btn)btn.disabled=false;return}
+    const base=id?{...prev}:{num:nextPed(),estado:'pendiente',creado:Date.now(),creadoPor:me.id||'',historial:[{e:'pendiente',u:me.id||'',t:Date.now()}]};
+    delete base.id;
+    const old=id?(prev.lineas||[]):[];
+    lineas.forEach((l,i)=>{const o=old[i];if(o&&o.kgReal!=null&&pidOf(o)===l.productoId&&o.calidad===l.calidad)l.kgReal=o.kgReal});
+    const datos={...base,empresaId:g('empresaId'),entrega:g('entrega'),asignado:g('asignado'),lineas,nota:g('nota')};
+    ok=await put('pedidos',id,datos);
+    if(ok){
+      const pid=id||ok;const kgT=nf.format(lineas.reduce((a,l)=>a+l.kg,0));
+      if(!id){if(datos.asignado)await avisa(datos.asignado,'ped_asignado',`Nuevo pedido para ti · ${resumenPed(datos)} · ${kgT} kg`,{pedidoId:pid});
+        else for(const u of activos())if(userCan(u,'pedidos')&&recibe(u,'ped_libre'))await notificar(u.id,`Nuevo pedido sin asignar · ${resumenPed(datos)} · ${kgT} kg`,{pedidoId:pid})}
+      else{if(datos.asignado&&datos.asignado!==prev.asignado)await avisa(datos.asignado,'ped_asignado',`Te han asignado un pedido · ${resumenPed(datos)} · ${kgT} kg`,{pedidoId:pid});
+        else if(datos.asignado)await avisa(datos.asignado,'ped_asignado',`Pedido modificado · ${resumenPed(datos)}`,{pedidoId:pid})}
+      toast(id?'Pedido actualizado':datos.asignado?`Pedido creado y enviado a ${nameOf(datos.asignado)}`:'Pedido creado y avisado al equipo');
+    }
+  }else if(kind==='msg'||kind==='msg-nuevo'){
+    const texto=g('texto'),para=kind==='msg'?f.dataset.para:g('para');
+    if(!texto){if(btn)btn.disabled=false;return}
+    const okm=await enviar(para,texto);if(btn)btn.disabled=false;
+    if(okm){if(kind==='msg'){f.reset();refreshChat();const ta=$('#ch-texto');if(ta)ta.focus()}else if(para==='*')closeSheet();else abrirChat(para)}
+    return;
+  }else if(kind==='login'){
+    const fail=m=>{loginErr=m;render();const c=$('#li-clave');if(c){c.value='';c.focus()}};
+    if(Date.now()<bloqueoHasta){fail(`Demasiados intentos. Espera ${Math.ceil((bloqueoHasta-Date.now())/1000)} segundos.`);return}
+    if(btn)btn.textContent='Comprobando…';
+    const u=S.usuarios.find(x=>normU(x.usuario)===normU(g('usuario')));
+    let okc=false;try{okc=!!u&&u.activo!==false&&await hashClave(String(fd.get('clave')||''),u.sal,u.it)===u.hash}catch{fail('Este navegador no permite comprobar claves. Usa Chrome, Edge o Safari actualizados.');return}
+    if(!okc){fallos++;if(fallos>=5){bloqueoHasta=Date.now()+30000;fallos=0}fail(u&&u.activo===false?'Este usuario está desactivado. Habla con el encargado.':'Usuario o clave incorrectos.');return}
+    entrar(u);return;
+  }else if(kind==='setup'){
+    const fail=m=>{loginErr=m;render()};
+    const c1=String(fd.get('clave')||''),c2=String(fd.get('clave2')||''),us=normU(g('usuario'));
+    if(c1.length<4){fail('La clave debe tener al menos 4 caracteres.');return}if(c1!==c2){fail('Las dos claves no coinciden.');return}
+    if(S.usuarios.length){render();return}
+    let cd;try{cd=await claveDatos(c1)}catch{fail('Este navegador no permite guardar claves.');return}
+    const ref=db.collection('usuarios').doc();const u={nombre:g('nombre'),usuario:us,rol:'admin',activo:true,...cd,creado:Date.now()};
+    try{await ref.set(u)}catch(e){fail(errMsg(e));return}
+    entrar({...u,id:ref.id});return;
+  }else if(kind==='usuario'){
+    const us=normU(g('usuario')),clave=String(fd.get('clave')||'').trim(),rolSel=g('rol');
+    const pmSel={};PKEYS.forEach(k=>{if(fd.get('pm-'+k)==='on')pmSel[k]=true});Object.entries(IMPLICA).forEach(([a,b])=>{if(pmSel[a])pmSel[b]=true});
+    const rol=rolSel==='admin'?'admin':'custom';
+    const activo=id&&id!==me.id?fd.get('activo')==='on':true;
+    const stop=m=>{toast(m);if(btn)btn.disabled=false};
+    if(!us){stop('Escribe un nombre de usuario.');return}
+    if(S.usuarios.some(x=>x.id!==id&&normU(x.usuario)===us)){stop('Ese usuario ya existe. Elige otro.');return}
+    if(!id&&clave.length<4){stop('La clave debe tener al menos 4 caracteres.');return}
+    if(id&&clave&&clave.length<4){stop('La clave debe tener al menos 4 caracteres.');return}
+    const adminsTras=S.usuarios.filter(x=>x.activo!==false&&x.rol==='admin'&&x.id!==id).length+(rol==='admin'&&activo?1:0);
+    if(!adminsTras){stop('Debe quedar al menos un encargado activo.');return}
+    const data={...prev,nombre:g('nombre'),usuario:us,rol,activo,creado:prev.creado||Date.now()};delete data.id;
+    if(rol==='admin')delete data.permisos;else data.permisos=pmSel;
+    data.avisos=Object.fromEntries(AKEYS.map(k=>[k,fd.get('av-'+k)==='on']));
+    if(clave){try{Object.assign(data,await claveDatos(clave))}catch{stop('Este navegador no permite guardar claves.');return}}
+    ok=await put('usuarios',id,data);
+    if(ok)toast(id?(clave?'Usuario y clave actualizados':'Usuario actualizado'):`Usuario creado: ${us}`);
+  }else if(kind==='clave'){
+    const u=meUser();const n1=String(fd.get('nueva')||''),n2=String(fd.get('nueva2')||'');
+    const stop=m=>{toast(m);if(btn)btn.disabled=false};
+    if(!u){stop('Vuelve a entrar.');return}
+    if(n1.length<4){stop('La nueva clave debe tener al menos 4 caracteres.');return}if(n1!==n2){stop('Las dos claves nuevas no coinciden.');return}
+    let okc=false;try{okc=await hashClave(String(fd.get('actual')||''),u.sal,u.it)===u.hash}catch{}
+    if(!okc){stop('La clave actual no es correcta.');return}
+    const {id:uid,...rest}=u;ok=await put('usuarios',uid,{...rest,...await claveDatos(n1)});
+    if(ok)toast('Clave cambiada');
+  }else if(kind==='nota'){
+    const avisar=fd.get('na-*')==='on'?['*']:activos().filter(u=>fd.get('na-'+u.id)==='on').map(u=>u.id);
+    const data={...prev,titulo:g('titulo'),fecha:g('fecha'),hora:g('hora'),tipo:g('tipo'),parcelaId:g('parcelaId'),texto:g('texto'),avisar,rec:avisar.length?g('rec'):'',privada:fd.get('privada')==='on',autor:prev.autor||me.id,creado:prev.creado||Date.now()};delete data.id;
+    if(id&&prev.fecha!==data.fecha){data.hecho=false;data.hechoPor=''}
+    ok=await put('notas',id,data);
+    if(ok){
+      const nid=id||ok;F.calMes=data.fecha.slice(0,7);F.calDia=data.fecha;
+      const dest=(avisar.includes('*')?activos().map(u=>u.id):avisar).filter(u=>u!==me.id);
+      if(fd.get('ahora')==='on')for(const d of dest)await notificar(d,`${nameOf(me.id)} ${id?'ha cambiado':'ha apuntado'} en el calendario: ${data.titulo} · ${fdate(data.fecha)}${data.hora?' · '+data.hora:''}`,{notaId:nid});
+      toast(dest.length&&fd.get('ahora')==='on'?`Nota guardada y aviso enviado a ${dest.length} ${dest.length===1?'persona':'personas'}`:'Nota guardada');
+      closeSheet();render();recordatorios();return;
+    }
+  }else if(kind==='mov'){
+    const q=num(g('cantidad')),tipo=g('tipo'),L=v=>v==='_'?'':v,loc=L(g('parcelaId')),dest=L(g('destinoId'));
+    const stop=m=>{toast(m);if(btn)btn.disabled=false};
+    if(q<=0){stop('Indica la cantidad.');return}
+    if(tipo==='traslado'&&loc===dest){stop('El origen y el destino son el mismo sitio.');return}
+    const a=insumo(g('insumoId'));const data={fecha:g('fecha'),tipo,insumoId:g('insumoId'),parcelaId:loc,cantidad:q,nota:g('nota'),por:prev.por||me.id||'',creado:prev.creado||Date.now()};
+    if(tipo==='traslado')data.destinoId=dest;
+    if(tipo==='entrada'){const c=fd.has('coste')?num(g('coste')):(+prev.coste||0);if(c)data.coste=c}
+    const antesInv=totalDe(invStock(),data.insumoId),despuesInv=antesInv-efectoInv(prev,data.insumoId)+efectoInv(data,data.insumoId);
+    ok=await put('movimientos',id,data);
+    if(ok){const queda=stockEn(invStock(),data.insumoId,loc)+(id?0:(tipo==='entrada'?q:-q));toast(tipo==='entrada'?`Entrada anotada: +${cant(q,a?.unidad)}`:tipo==='uso'?`Uso anotado en ${locName(loc)}: −${cant(q,a?.unidad)}`:`Traslado anotado: ${cant(q,a?.unidad)} a ${locName(dest)}`)}
+    if(ok&&a){closeSheet();await avisarPoco(a,data.insumoId,antesInv,despuesInv,a.minimo);return}
+  }else if(kind==='insumo'){
+    const nuevoIns={nombre:g('nombre'),categoria:g('categoria'),unidad:g('unidad'),minimo:num(g('minimo')),nota:g('nota'),creado:prev.creado||Date.now()};
+    ok=await put('insumos',id,nuevoIns);
+    if(ok&&id){const tot=totalDe(invStock(),id);closeSheet();toast('Material guardado');await avisarPoco(nuevoIns,id,tot,tot,prev.minimo);return}
+    if(ok){toast(id?'Material guardado':'Material añadido. Anota ahora cuánto hay.');if(!id){closeSheet();formMov({},{tipo:'entrada',insumoId:ok,loc:ALM});return}}
+  }else if(kind==='producto'){
+    const cals=g('calidades').split(',').map(s=>s.trim()).filter(Boolean);
+    ok=await put('productos',id,{nombre:g('nombre'),calidades:cals.length?cals:['Única'],creado:prev.creado||Date.now()});
+    if(ok)toast('Producto guardado');
+  }else if(kind==='parcela'){
+    ok=await put('parcelas',id,{nombre:g('nombre'),superficie:g('superficie'),plantas:g('plantas'),nota:g('nota'),creado:prev.creado||Date.now()});
+    if(ok)toast('Parcela guardada');
+  }else if(kind==='ajustes'){
+    if(db){try{await db.doc('config/ajustes').set({nombre:g('nombre'),nif:g('nif'),telefono:g('telefono'),direccion:g('direccion')});toast('Datos guardados')}catch(e){toast(errMsg(e))}}
+    else toast('Abre la app con tu cuenta de Claude para guardar datos.');
+    if(btn)btn.disabled=false;return;
+  }
+  if(ok)closeSheet();else if(btn)btn.disabled=false;
+});
+
+let openPed=null;
+function refreshPedido(){if(!openPed)return;const sh=$('#sheetRoot');if(!sh.innerHTML||sh.querySelector('form')){return}if(document.activeElement&&document.activeElement.classList.contains('qty'))return;const p=byId(S.pedidos,openPed);if(p)detPedido(p)}
+/* ---------- Arranque ---------- */
+const h0=(location.hash||'').slice(1);if(VIEWS[h0])tab=h0;
+render();
+function subscribeAll(){
+  const onErr=()=>{status='error';render()};
+  ['productos','parcelas','empresas','cosechas','ventas','pedidos','usuarios','mensajes','insumos','movimientos','notas'].forEach(n=>db.collection(n).onSnapshot(s=>{S[n]=s.docs.map(d=>({id:d.id,...d.data()}));if(n==='usuarios'&&!loaded.usuarios){const sid=sesGet();if(sid&&S.usuarios.some(u=>u.id===sid&&u.activo!==false))me={id:sid}}loaded[n]=true;if(n==='mensajes'&&me.id)avisosNuevos();render();if(n==='pedidos')refreshPedido();if(n==='mensajes')refreshChat();if(n==='notas'||n==='mensajes')recordatorios()},onErr));
+  db.doc('config/ajustes').onSnapshot(s=>{S.cfg=s.exists?{...s.data()}:{};render()},onErr);
+}
+
+/* ---------- Modo prueba: base de datos en memoria con datos inventados ---------- */
+function demoDB(){
+  const store={}, subs={}, docSubs={};
+  const snapCol=n=>({docs:Object.entries(store[n]||{}).map(([id,d])=>({id,exists:true,data:()=>d}))});
+  const emit=n=>(subs[n]||[]).forEach(f=>f(snapCol(n)));
+  const col=n=>({
+    onSnapshot(f){(subs[n]??=[]).push(f);setTimeout(()=>f(snapCol(n)),0);return()=>{}},
+    doc(id){id=id||('d'+Math.random().toString(36).slice(2,10));return {id,
+      async set(d){(store[n]??={})[id]=JSON.parse(JSON.stringify(d));emit(n)},
+      async delete(){if(store[n])delete store[n][id];emit(n)}}}
+  });
+  const cfg={v:null};
+  const db={collection:col,doc:()=>({onSnapshot(f){docSubs.c=f;setTimeout(()=>f(cfg.v?{exists:true,data:()=>cfg.v}:{exists:false}),0);return()=>{}},async set(d){cfg.v=d;docSubs.c&&docSubs.c({exists:true,data:()=>d})}})};
+  // --- datos de ejemplo ---
+  let seed=7;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
+  const pick=a=>a[Math.floor(rnd()*a.length)], r5=n=>Math.round(n/5)*5;
+  const d0=new Date();const ds=off=>{const d=new Date(d0);d.setDate(d.getDate()+off);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+  const put=(n,id,d)=>((store[n]??={})[id]=d);
+  cfg.v={nombre:'Finca El Pitayal (ejemplo)',nif:'00000000T',direccion:'Camino de la Rambla s/n, Costa Tropical, Granada',telefono:'600 000 000'};
+  const P=[['pitahaya','Pitahaya roja',['Extra','Primera','Segunda','Destrío'],[4.2,3.4,2.4,0.9]],['amarilla','Pitahaya amarilla',['Extra','Primera'],[6.5,5.2]],['mango','Mango',['Primera','Segunda'],[2.1,1.4]]];
+  P.forEach(([id,nombre,calidades])=>put('productos',id,{nombre,calidades}));
+  [['inv1','Invernadero 1','4.000 m²','1.100'],['inv2','Invernadero 2','3.200 m²','850'],['bancal','Bancal Alto','6.500 m²','420']].forEach(([id,nombre,superficie,plantas])=>put('parcelas',id,{nombre,superficie,plantas}));
+  const E=[['e1','Frutas Tropicales Costa S.L.','B00000001','Polígono Industrial, Motril','958 000 001'],['e2','Cooperativa Agrícola del Sur','F00000002','Ctra. de la Costa km 3','958 000 002'],['e3','Exóticos Mercamálaga S.L.','B00000003','Mercamálaga, nave 12','952 000 003'],['e4','Frutería La Plaza','00000004X','Plaza del Mercado 4','600 000 004']];
+  E.forEach(([id,nombre,cif,direccion,telefono])=>put('empresas',id,{nombre,cif,direccion,telefono}));
+  // cosechas (3 por semana) y ventas (cada 3-4 días) de los últimos 85 días, sacando las ventas del stock
+  const av={};const k=(p,c)=>p+'|'+c;let cn=0,vn=0,nextV=-80;
+  const nums={};const numOf=f=>{const y=f.slice(0,4);nums[y]=(nums[y]||0)+1;return `A${y}-${String(nums[y]).padStart(4,'0')}`};
+  for(let off=-85;off<=-1;off++){
+    if([1,3,5].includes(new Date(ds(off)+'T12:00').getDay())){
+      P.forEach(([pid,,cals])=>{if(pid!=='pitahaya'&&rnd()<.55)return;const par=pid==='mango'?'bancal':pid==='amarilla'?'inv2':pick(['inv1','inv2']);
+        cals.forEach((c,i)=>{const base=pid==='pitahaya'?[140,220,120,40][i]:pid==='amarilla'?[35,55][i]:[90,45][i];const kgv=r5(base*(.6+rnd()*.8));if(!kgv)return;av[k(pid,c)]=(av[k(pid,c)]||0)+kgv;put('cosechas','c'+(++cn),{fecha:ds(off),productoId:pid,parcelaId:par,calidad:c,kg:kgv,nota:'',creado:cn})})});
+    }
+    if(off>=nextV&&off<=-4){
+      nextV=off+3+Math.floor(rnd()*2);
+      const emp=pick(E)[0];const small=emp==='e4';
+      const pr=P.slice().sort((x,y)=>x[2].reduce((a,c)=>a+(av[k(y[0],c)]||0),0)-y[2].reduce((a,c)=>a+(av[k(x[0],c)]||0),0))[rnd()<.75?0:1];
+      const lineas=[];pr[2].forEach((c,i)=>{const have=av[k(pr[0],c)]||0;let q=r5(small?Math.min(50,have*.3):Math.min(600,have*(.55+rnd()*.35)));if(q<10)return;av[k(pr[0],c)]-=q;lineas.push({productoId:pr[0],calidad:c,kg:q,precio:Math.round(pr[3][i]*(.92+rnd()*.16)*100)/100})});
+      if(lineas.length){const f=ds(off);put('ventas','v'+(++vn),{fecha:f,empresaId:emp,lineas,total:Math.round(lineas.reduce((a,l)=>a+l.kg*l.precio,0)*100)/100,cobrado:off<-30?rnd()<.9:rnd()<.35,nota:'',num:numOf(f),creado:vn})}
+    }
+  }
+  // pedidos en distintos estados
+  const H=(...e)=>e.map(([st,u,off])=>({e:st,u,t:Date.now()+off*864e5}));
+  const vf=ds(-2);put('ventas','v-ped1',{fecha:vf,empresaId:'e2',lineas:[{productoId:'pitahaya',calidad:'Extra',kg:245,precio:4.1},{productoId:'pitahaya',calidad:'Primera',kg:300,precio:3.3}],total:1994.5,cobrado:false,nota:'Pedido P2026-0001',num:numOf(vf),creado:999,pedidoId:'p1'});
+  put('pedidos','p1',{num:'P2026-0001',empresaId:'e2',entrega:ds(-2),asignado:'demo-juan',estado:'entregado',ventaId:'v-ped1',entregado:ds(-2),nota:'Cajas de 4 kg',lineas:[{productoId:'pitahaya',calidad:'Extra',kg:250,precio:4.1,kgReal:245},{productoId:'pitahaya',calidad:'Primera',kg:300,precio:3.3,kgReal:300}],historial:H(['pendiente','demo-ana',-5],['preparacion','demo-juan',-3],['preparado','demo-juan',-2.5],['entregado','demo-juan',-2]),creado:1});
+  put('pedidos','p2',{num:'P2026-0002',empresaId:'e1',entrega:ds(-1),asignado:'demo-maria',estado:'pendiente',nota:'Llamar antes de cargar',lineas:[{productoId:'pitahaya',calidad:'Extra',kg:200,precio:4.3},{productoId:'amarilla',calidad:'Extra',kg:60,precio:6.6}],historial:H(['pendiente','demo-ana',-4]),creado:2});
+  put('pedidos','p3',{num:'P2026-0003',empresaId:'e3',entrega:ds(1),asignado:'demo-juan',estado:'preparacion',nota:'Palé completo. Etiquetar por calidad.',lineas:[{productoId:'pitahaya',calidad:'Primera',kg:400,precio:3.4,kgReal:180},{productoId:'pitahaya',calidad:'Segunda',kg:250,precio:2.4}],historial:H(['pendiente','demo-ana',-2],['preparacion','demo-juan',-.2]),creado:3});
+  put('pedidos','p4',{num:'P2026-0004',empresaId:'e4',entrega:ds(0),asignado:'demo-maria',estado:'preparado',nota:'Recoge él en la finca',lineas:[{productoId:'mango',calidad:'Primera',kg:40,precio:2.2,kgReal:42},{productoId:'amarilla',calidad:'Primera',kg:15,precio:5.3,kgReal:15}],historial:H(['pendiente','demo-ana',-1],['preparacion','demo-maria',-.5],['preparado','demo-maria',-.1]),creado:4});
+  put('pedidos','p5',{num:'P2026-0005',empresaId:'e2',entrega:ds(4),asignado:'',estado:'pendiente',nota:'',lineas:[{productoId:'pitahaya',calidad:'Extra',kg:300,precio:4.1},{productoId:'pitahaya',calidad:'Destrío',kg:150,precio:0.9}],historial:H(['pendiente','demo-ana',-.1]),creado:5});
+  put('pedidos','p6',{num:'P2026-0006',empresaId:'e3',entrega:ds(-6),asignado:'demo-juan',estado:'cancelado',nota:'El cliente anuló el pedido',lineas:[{productoId:'mango',calidad:'Segunda',kg:100,precio:1.4}],historial:H(['pendiente','demo-ana',-9],['cancelado','demo-ana',-7]),creado:6});
+  Object.values(store.pedidos).forEach(p=>p.creadoPor='demo-ana');
+  [['abono','Abono NPK 15-15-15','Abono','kg',150],['nitrato','Nitrato potásico','Abono','kg',250],['humus','Humus de lombriz','Abono','sacos',10],['neem','Aceite de neem','Fitosanitario','L',5],['cobre','Oxicloruro de cobre','Fitosanitario','kg',4],['cajas4','Cajas de cartón 4 kg','Envases','ud',300],['hilo','Hilo de entutorar','Otros','rollos',3],['goteros','Goteros 4 L/h','Riego','ud',100]]
+    .forEach(([id,nombre,categoria,unidad,minimo])=>put('insumos',id,{nombre,categoria,unidad,minimo,nota:''}));
+  let mn=0;const MV=(off,tipo,insumoId,parcelaId,cantidad,extra={})=>put('movimientos','mv'+(++mn),{fecha:ds(off),tipo,insumoId,parcelaId,cantidad,nota:'',por:'demo-ana',creado:mn,...extra});
+  MV(-60,'entrada','abono','',1000,{coste:780,nota:'Cooperativa'});MV(-60,'entrada','nitrato','',300,{coste:450});MV(-58,'entrada','humus','',40,{coste:320});
+  MV(-58,'entrada','neem','',25,{coste:375});MV(-58,'entrada','cobre','',20,{coste:160});MV(-55,'entrada','cajas4','',2000,{coste:900});MV(-55,'entrada','hilo','',12,{coste:96});MV(-50,'entrada','goteros','',500,{coste:110});
+  MV(-54,'traslado','abono','',300,{destinoId:'inv1'});MV(-54,'traslado','abono','',250,{destinoId:'inv2'});MV(-54,'traslado','abono','',200,{destinoId:'bancal'});
+  MV(-53,'traslado','nitrato','',100,{destinoId:'inv1'});MV(-53,'traslado','nitrato','',80,{destinoId:'inv2'});MV(-52,'traslado','humus','',12,{destinoId:'bancal'});MV(-52,'traslado','humus','',10,{destinoId:'inv1'});
+  MV(-50,'traslado','neem','',8,{destinoId:'inv1'});MV(-50,'traslado','neem','',6,{destinoId:'inv2'});MV(-50,'traslado','cobre','',6,{destinoId:'bancal'});MV(-48,'traslado','goteros','',200,{destinoId:'inv2'});MV(-48,'traslado','hilo','',5,{destinoId:'inv1'});
+  [[-47,'abono','inv1',60],[-47,'abono','inv2',50],[-45,'abono','bancal',80],[-40,'neem','inv1',2.5,'Tratamiento cochinilla'],[-38,'nitrato','inv1',25],[-38,'nitrato','inv2',20],[-33,'abono','inv1',60],[-33,'abono','inv2',50],[-30,'humus','bancal',6],[-28,'cobre','bancal',2,'Tras las lluvias'],[-26,'neem','inv2',2],[-24,'goteros','inv2',140,'Reposición línea 3'],[-20,'abono','inv1',60],[-20,'abono','bancal',70],[-18,'hilo','inv1',3],[-14,'nitrato','inv1',30],[-12,'humus','inv1',5],[-10,'abono','inv2',60],[-7,'neem','inv1',3,'Repetir en 15 días'],[-6,'abono','inv1',70],[-5,'cobre','bancal',2],[-3,'nitrato','inv2',25]]
+    .forEach(([off,i,p,q,nota])=>MV(off,'uso',i,p,q,{nota:nota||'',por:'demo-juan'}));
+  let nn=0;const NT=(off,titulo,tipo,extra={})=>put('notas','n'+(++nn),{fecha:ds(off),hora:'',titulo,tipo,parcelaId:'',texto:'',avisar:[],rec:'',privada:false,autor:'demo-ana',creado:nn,...extra});
+  NT(-9,'Riego largo tras el calor','Riego',{parcelaId:'inv1',hecho:true,hechoPor:'demo-juan'});
+  NT(-7,'Tratamiento con aceite de neem','Tratamiento',{parcelaId:'inv1',texto:'2,5 L en 500 L de agua. Repetir a los 15 días.',avisar:['demo-juan'],rec:'0',hecho:true,hechoPor:'demo-juan'});
+  NT(-3,'Revisar goteros de la línea 3','Tarea',{parcelaId:'inv2',avisar:['demo-juan'],rec:'0'});
+  NT(-1,'Llamar al gestor por las facturas del trimestre','Nota',{privada:true,autor:'demo-ana',avisar:['demo-ana'],rec:'0'});
+  NT(0,'Abonado de fondo','Abonado',{hora:'08:00',parcelaId:'bancal',texto:'80 kg de NPK 15-15-15 repartidos por las calles.',avisar:['demo-juan'],rec:'0'});
+  NT(0,'Recoger toda la Extra para la cooperativa','Recogida',{hora:'07:30',parcelaId:'inv1',avisar:['*'],rec:'0'});
+  NT(1,'Visita del técnico de la cooperativa','Visita o entrega',{hora:'10:30',texto:'Viene a ver el estado de la plantación y las analíticas de suelo.',avisar:['demo-ana','demo-maria'],rec:'1'});
+  NT(3,'Riego con nitrato potásico','Riego',{parcelaId:'inv2',avisar:['demo-juan'],rec:'0'});
+  NT(6,'Pedir cajas de 4 kg','Tarea',{texto:'Quedan pocas. Pedir 2.000 a la cartonera.',avisar:['demo-maria'],rec:'1'});
+  NT(8,'Repetir tratamiento con neem','Tratamiento',{parcelaId:'inv1',avisar:['demo-juan'],rec:'1'});
+  NT(12,'Revisión de la bomba de riego','Tarea',{hora:'09:00',avisar:['demo-juan','demo-ana'],rec:'2'});
+  NT(15,'Entrega de plantones nuevos','Visita o entrega',{parcelaId:'bancal',avisar:['*'],rec:'1'});
+  for(let off=-52;off<=-2;off+=5)MV(off,'uso','cajas4','',100+Math.round(rnd()*6)*10,{nota:'Envasado',por:'demo-maria'});
+  const M=(id,de,para,texto,hAgo,leido,extra={})=>put('mensajes',id,{de,para,texto,t:Date.now()-hAgo*36e5,leido,tipo:'msg',...extra});
+  M('m1','demo-ana','demo-juan','Juan, mañana empezamos a las 8 en el Invernadero 1. Hay que recoger toda la Extra.',26,true);
+  M('m2','demo-juan','demo-ana','De acuerdo. ¿Llevo las cajas de 4 kg o las de 2?',25.5,true);
+  M('m3','demo-ana','demo-juan','Las de 4 kg, que son para la cooperativa.',25,true);
+  M('m4','demo-maria','demo-ana','El pedido de Frutas Tropicales no lo puedo cerrar, falta Pitahaya amarilla Extra. ¿Lo dejo para el lunes?',3,false);
+  M('m5','demo-ana','demo-maria','Recuerda apuntar los kilos reales en cada pedido antes de marcarlo como preparado.',30,true);
+  M('m6','demo-juan','demo-maria','María, ¿te quedan cajas pequeñas en el almacén?',1.5,false);
+  const A=(id,de,para,texto,hAgo,leido,pedidoId)=>put('mensajes',id,{de,para,texto,t:Date.now()-hAgo*36e5,leido,tipo:'aviso',pedidoId});
+  const rp=id=>{const p=store.pedidos[id];return `${p.num} · ${store.empresas[p.empresaId].nombre} · entrega ${fdate(p.entrega)}`};
+  A('a1','demo-ana','demo-maria',`Nuevo pedido para ti · ${rp('p2')} · 260 kg`,96,true,'p2');
+  A('a2','demo-ana','demo-juan',`Nuevo pedido para ti · ${rp('p3')} · 650 kg`,48,false,'p3');
+  A('a3','demo-juan','demo-ana',`Juan: pedido en preparación · ${rp('p3')}`,5,false,'p3');
+  A('a4','demo-ana','demo-maria',`Nuevo pedido para ti · ${rp('p4')} · 55 kg`,24,true,'p4');
+  A('a5','demo-maria','demo-ana',`María: pedido preparado · ${rp('p4')}`,2,false,'p4');
+  A('a6','demo-ana','demo-juan',`Nuevo pedido sin asignar · ${rp('p5')} · 450 kg`,2,false,'p5');
+  for(const para of ['demo-ana','demo-juan'])put('mensajes','ai-'+para,{de:'demo-juan',para,texto:'Queda poco Nitrato potásico: 200 kg (mínimo 250 kg)',t:Date.now()-3*36e5,leido:false,tipo:'aviso',insumoId:'nitrato'});
+  A('a7','demo-ana','demo-maria',`Nuevo pedido sin asignar · ${rp('p5')} · 450 kg`,2,false,'p5');
+  return db;
+}
+async function startDemo(){
+  status='demo';db=demoDB();me={id:null};
+  try{for(const [id,nombre,usuario,rol] of [['demo-ana','Ana','ana','admin'],['demo-juan','Juan','juan','custom'],['demo-maria','María','maria','custom']])
+    await db.collection('usuarios').doc(id).set({nombre,usuario,rol,activo:true,...(id==='demo-maria'?{permisos:{pedidos:true,ped_todos:true,cos_ver:true,stock:true,ventas:true,precios:true,inv_ver:true,cal_ver:true,cal_editar:true}}:id==='demo-juan'?{permisos:{...PRESET_TRAB,inv_ver:true,inv_editar:true},avisos:{ped_asignado:true,ped_libre:true,ped_estado:false,inv_min:true}}:{}),...await claveDatos('1234',2000),creado:1})}catch{}
+  subscribeAll();
+}
+
+(async()=>{
+  if(!window.claude?.use){startDemo();return}
+  db=await window.claude.use('db');
+  if(!db){startDemo();return}
+  status='ok';subscribeAll();
+})();
+})();
+</script>
+
+</body>
+</html>
